@@ -24,6 +24,17 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'brevo' => [
+        'key' => env('BREVO_API_KEY'),
+        'members_list_id' => env('BREVO_MEMBERS_LIST_ID'),
+    ],
+
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('APP_URL').'/auth/google/callback',
+    ],
+
     'resend' => [
         'key' => env('RESEND_KEY'),
     ],

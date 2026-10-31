@@ -48,6 +48,11 @@
     --color-chart-4: var(--chart-4);
     --color-chart-5: var(--chart-5);
 
+    --color-canvas: var(--canvas);
+    --color-brand: var(--brand);
+    --color-brand-foreground: var(--brand-foreground);
+    --color-level: var(--level);
+
     --color-sidebar: var(--sidebar-background);
     --color-sidebar-foreground: var(--sidebar-foreground);
     --color-sidebar-primary: var(--sidebar-primary);
@@ -77,6 +82,10 @@
 }
 
 :root {
+    --canvas: hsl(40, 20%, 97%);
+    --brand: hsl(243, 75%, 59%);
+    --brand-foreground: hsl(0, 0%, 100%);
+    --level: hsl(217, 91%, 60%);
     --background: hsl(0, 0%, 100%);
     --foreground: hsl(0, 0%, 3.9%);
     --card: hsl(0, 0%, 100%);
@@ -113,9 +122,13 @@
 }
 
 .dark {
+    --canvas: hsl(0, 0%, 5%);
+    --brand: hsl(243, 85%, 70%);
+    --brand-foreground: hsl(0, 0%, 100%);
+    --level: hsl(217, 91%, 65%);
     --background: hsl(0, 0%, 3.9%);
     --foreground: hsl(0, 0%, 98%);
-    --card: hsl(0, 0%, 3.9%);
+    --card: hsl(0, 0%, 9%);
     --card-foreground: hsl(0, 0%, 98%);
     --popover: hsl(0, 0%, 3.9%);
     --popover-foreground: hsl(0, 0%, 98%);
@@ -154,5 +167,12 @@
 
     body {
         @apply bg-background text-foreground;
+    }
+}
+
+@utility no-scrollbar {
+    scrollbar-width: none;
+    &::-webkit-scrollbar {
+        display: none;
     }
 }

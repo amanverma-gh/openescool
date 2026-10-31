@@ -3,12 +3,14 @@ import { Transition } from '@headlessui/react';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 
+import { UserAvatar } from '@/components/community/user-avatar';
 import DeleteUser from '@/components/delete-user';
 import HeadingSmall from '@/components/heading-small';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 
@@ -22,15 +24,19 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: boolean; status?: string }) {
     const { auth } = usePage<SharedData>().props;
 
-    const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
+    const { data, setData, post, errors, processing, recentlySuccessful } = useForm({
         name: auth.user.name,
+        username: auth.user.username,
         email: auth.user.email,
+        bio: auth.user.bio ?? '',
+        location: (auth.user.location as string | null) ?? '',
+        avatar: null as File | null,
     });
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        patch(route('profile.update'));
+        post(route('profile.update'), { forceFormData: true, preserveScroll: true });
     };
 
     return (
@@ -39,9 +45,18 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
 
             <SettingsLayout>
                 <div className="space-y-6">
-                    <HeadingSmall title="Profile information" description="Update your name and email address" />
+                    <HeadingSmall title="Profile information" description="How other members see you" />
 
                     <form onSubmit={submit} className="space-y-6">
+                        <div className="flex items-center gap-4">
+                            <UserAvatar user={auth.user as never} size="lg" link={false} />
+                            <div className="grid flex-1 gap-2">
+                                <Label htmlFor="avatar">Profile photo</Label>
+                                <Input id="avatar" type="file" accept="image/*" onChange={(e) => setData('avatar', e.target.files?.[0] ?? null)} />
+                                <InputError message={errors.avatar} />
+                            </div>
+                        </div>
+
                         <div className="grid gap-2">
                             <Label htmlFor="name">Name</Label>
 
@@ -56,6 +71,31 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                             />
 
                             <InputError className="mt-2" message={errors.name} />
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="username">Username</Label>
+                            <Input
+                                id="username"
+                                value={data.username}
+                                onChange={(e) => setData('username', e.target.value.toLowerCase())}
+                                required
+                                autoComplete="off"
+                            />
+                            <p className="text-muted-foreground text-xs">Others can mention you with @{data.username || 'username'}</p>
+                            <InputError message={errors.username} />
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="bio">Bio</Label>
+                            <Textarea id="bio" value={data.bio} onChange={(e) => setData('bio', e.target.value)} maxLength={300} rows={3} />
+                            <InputError message={errors.bio} />
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="location">Location</Label>
+                            <Input id="location" value={data.location} onChange={(e) => setData('location', e.target.value)} maxLength={100} />
+                            <InputError message={errors.location} />
                         </div>
 
                         <div className="grid gap-2">

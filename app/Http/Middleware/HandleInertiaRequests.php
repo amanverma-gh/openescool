@@ -2,7 +2,6 @@
 
 namespace App\Http\Middleware;
 
-use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -36,15 +35,24 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
+        $user = $request->user();
 
-        return array_merge(parent::share($request), [
+        return [
             ...parent::share($request),
             'name' => config('app.name'),
-            'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
-                'user' => $request->user(),
+                'user' => $user ? $user->only(['id', 'name', 'username', 'email', 'avatar', 'bio', 'is_admin', 'email_verified_at']) : null,
+                'communities' => fn () => $user?->communities()->orderBy('name')->get(['communities.id', 'name', 'slug', 'icon_path'])
+                    ->map->only(['id', 'name', 'slug', 'icon']),
+                'unreadNotifications' => fn () => $user?->unreadNotifications()->count() ?? 0,
             ],
-        ]);
+            'features' => [
+                'google' => filled(config('services.google.client_id')),
+            ],
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'error' => fn () => $request->session()->get('error'),
+            ],
+        ];
     }
 }
