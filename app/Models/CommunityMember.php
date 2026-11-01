@@ -21,6 +21,8 @@ class CommunityMember extends Model
 
     public const STATUS_BANNED = 'banned';
 
+    public const STATUS_EXPIRED = 'expired'; // paid access ended; points and history kept
+
     /**
      * Points needed to reach each level (index = level - 1).
      */

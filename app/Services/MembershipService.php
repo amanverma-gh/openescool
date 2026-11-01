@@ -24,8 +24,8 @@ class MembershipService
             'user_id' => $user->id,
         ]);
 
-        if ($member->exists && $member->status !== CommunityMember::STATUS_PENDING) {
-            return $member; // already active, or banned
+        if ($member->exists && in_array($member->status, [CommunityMember::STATUS_ACTIVE, CommunityMember::STATUS_BANNED], true)) {
+            return $member;
         }
 
         $member->fill([

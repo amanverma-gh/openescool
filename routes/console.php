@@ -27,3 +27,4 @@ Artisan::command('app:make-admin {email}', function (string $email) {
 Schedule::command('queue:work --stop-when-empty --max-time=50')->everyMinute()->withoutOverlapping();
 Schedule::command('queue:prune-failed --hours=168')->daily();
 Schedule::command('app:send-event-reminders')->everyFiveMinutes()->withoutOverlapping();
+Schedule::command('app:expire-subscriptions')->hourly()->withoutOverlapping();

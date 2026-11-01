@@ -16,6 +16,10 @@ class Community extends Model
 
     public const PRIVACY_PRIVATE = 'private';
 
+    public const ACCESS_FREE = 'free';
+
+    public const ACCESS_PAID = 'paid';
+
     protected $fillable = [
         'name',
         'slug',
@@ -24,6 +28,7 @@ class Community extends Model
         'icon_path',
         'cover_path',
         'privacy',
+        'access_type',
         'requires_approval',
         'join_questions',
     ];
@@ -60,6 +65,14 @@ class Community extends Model
         return $this->privacy === self::PRIVACY_PUBLIC;
     }
 
+    /**
+     * Paid communities need an active subscription to join (if they have plans for sale).
+     */
+    public function isPaid(): bool
+    {
+        return $this->access_type === self::ACCESS_PAID;
+    }
+
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_id');
@@ -93,6 +106,21 @@ class Community extends Model
     public function events(): HasMany
     {
         return $this->hasMany(Event::class);
+    }
+
+    public function plans(): HasMany
+    {
+        return $this->hasMany(Plan::class)->orderBy('amount');
+    }
+
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
     }
 
     /**

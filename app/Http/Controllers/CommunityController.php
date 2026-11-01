@@ -100,6 +100,9 @@ class CommunityController extends Controller
                 'requires_approval' => $community->requires_approval || ! $community->isPublic(),
                 'join_questions' => $community->join_questions ?? [],
                 'created_at' => $community->created_at,
+                'plans' => $community->isPaid()
+                    ? $community->plans()->where('is_active', true)->get()->map->toPublicArray()
+                    : [],
             ],
             'admins' => $admins,
             'stats' => [

@@ -43,6 +43,7 @@ class User extends Authenticatable
         'remember_token',
         'google_id',
         'avatar_path',
+        'stripe_customer_id',
     ];
 
     /**
@@ -97,6 +98,16 @@ class User extends Authenticatable
     public function memberships(): HasMany
     {
         return $this->hasMany(CommunityMember::class);
+    }
+
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
     }
 
     public function communities(): BelongsToMany

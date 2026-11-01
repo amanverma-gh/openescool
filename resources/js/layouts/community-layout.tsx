@@ -20,7 +20,12 @@ export default function CommunityLayout({ community, children }: CommunityLayout
         { title: 'Members', href: `${base}/members`, active: path.startsWith(`${base}/members`) },
         { title: 'Leaderboards', href: `${base}/leaderboards`, active: path.startsWith(`${base}/leaderboards`) },
         { title: 'About', href: `${base}/about`, active: path.startsWith(`${base}/about`) },
-        ...(community.can.manage ? [{ title: 'Settings', href: `${base}/settings`, active: path.startsWith(`${base}/settings`) }] : []),
+        ...(community.can.manage
+            ? [
+                  { title: 'Revenue', href: `${base}/revenue`, active: path.startsWith(`${base}/revenue`) },
+                  { title: 'Settings', href: `${base}/settings`, active: path.startsWith(`${base}/settings`) },
+              ]
+            : []),
     ];
 
     const nav = (

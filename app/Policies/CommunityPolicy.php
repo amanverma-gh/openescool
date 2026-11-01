@@ -13,11 +13,12 @@ class CommunityPolicy
     }
 
     /**
-     * Read the feed and classroom. Public communities are readable by anyone.
+     * Read the feed and classroom. Free public communities are readable by anyone;
+     * paid ones show only their About page to non-members.
      */
     public function view(?User $user, Community $community): bool
     {
-        return $community->isPublic() || (bool) $community->membershipFor($user)?->isActive();
+        return ($community->isPublic() && ! $community->isPaid()) || (bool) $community->membershipFor($user)?->isActive();
     }
 
     /**

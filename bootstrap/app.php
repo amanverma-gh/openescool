@@ -20,6 +20,9 @@ return Application::configure(basePath: dirname(__DIR__))
             TrackLastSeen::class,
         ]);
 
+        // Payment gateways post webhooks without a CSRF token; they are signature-verified instead.
+        $middleware->validateCsrfTokens(except: ['webhooks/*']);
+
         // Hostinger and most hosts sit behind a proxy/load balancer.
         $middleware->trustProxies(at: '*');
     })

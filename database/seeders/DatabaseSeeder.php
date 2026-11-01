@@ -86,6 +86,10 @@ class DatabaseSeeder extends Seeder
 
         $this->seedClassroom($community);
         $this->seedEvents($community, $admin);
+
+        // Ready-made plans; the community stays free until the owner switches it to paid.
+        $community->plans()->create(['name' => 'Monthly', 'interval' => 'month', 'amount' => 4900, 'currency' => 'USD']);
+        $community->plans()->create(['name' => 'India', 'interval' => 'month', 'amount' => 99900, 'currency' => 'INR']);
     }
 
     protected function seedClassroom(Community $community): void

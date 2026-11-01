@@ -46,3 +46,20 @@ export function formatCount(n: number): string {
 export function plural(n: number, word: string): string {
     return `${n} ${word}${n === 1 ? '' : 's'}`;
 }
+
+export function formatMoney(amount: number, currency: string): string {
+    const value = amount / 100;
+    try {
+        return new Intl.NumberFormat(undefined, {
+            style: 'currency',
+            currency,
+            maximumFractionDigits: Number.isInteger(value) ? 0 : 2,
+        }).format(value);
+    } catch {
+        return `${currency} ${value.toFixed(2)}`;
+    }
+}
+
+export function intervalLabel(interval: 'month' | 'year' | 'one_time'): string {
+    return { month: '/month', year: '/year', one_time: ' once' }[interval];
+}

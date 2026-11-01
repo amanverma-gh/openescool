@@ -6,14 +6,14 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import CommunityLayout from '@/layouts/community-layout';
-import { formatCount } from '@/lib/utils';
-import { type Community, type PublicUser, type SharedData } from '@/types';
+import { formatCount, formatMoney, intervalLabel } from '@/lib/utils';
+import { type Community, type Plan, type PublicUser, type SharedData } from '@/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { Globe, LoaderCircle, Lock } from 'lucide-react';
 import { useState } from 'react';
 
 interface AboutProps {
-    community: Community & { about: string | null; requires_approval: boolean; join_questions: string[]; created_at: string };
+    community: Community & { about: string | null; requires_approval: boolean; join_questions: string[]; created_at: string; plans: Plan[] };
     admins: (PublicUser & { role: string })[];
     stats: { members: number; posts: number; online: number };
 }
@@ -34,6 +34,8 @@ export default function About({ community, admins, stats }: AboutProps) {
     };
 
     const status = community.membership?.status;
+    const paid = community.access_type === 'paid';
+    const cheapest = community.plans[0];
 
     return (
         <CommunityLayout community={community}>
@@ -78,10 +80,23 @@ export default function About({ community, admins, stats }: AboutProps) {
                             <Stat value={admins.length} label="Admins" />
                         </div>
 
-                        {!status && (
+                        {paid && (!status || status === 'expired') && (
+                            <div className="space-y-2">
+                                <Button className="w-full" size="lg" asChild>
+                                    <Link href={auth.user ? route('billing.checkout', community.slug) : route('register')}>
+                                        {status === 'expired' ? 'Rejoin' : 'Join'}
+                                        {cheapest && ` · ${formatMoney(cheapest.amount, cheapest.currency)}${intervalLabel(cheapest.interval)}`}
+                                    </Link>
+                                </Button>
+                                {community.plans.length > 1 && (
+                                    <p className="text-muted-foreground text-center text-xs">{community.plans.length} plans available</p>
+                                )}
+                            </div>
+                        )}
+                        {!paid && (!status || status === 'expired') && (
                             <Button className="w-full" size="lg" onClick={join} disabled={form.processing}>
                                 {form.processing && <LoaderCircle className="size-4 animate-spin" />}
-                                {community.requires_approval ? 'Request to join' : 'Join group'}
+                                {community.requires_approval ? 'Request to join' : status === 'expired' ? 'Rejoin group' : 'Join group'}
                             </Button>
                         )}
                         {status === 'pending' && (

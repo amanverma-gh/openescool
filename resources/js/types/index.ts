@@ -66,10 +66,11 @@ export interface Community extends CommunityLink {
     tagline: string | null;
     cover: string | null;
     privacy: 'public' | 'private';
+    access_type: 'free' | 'paid';
     members_count: number;
     membership: {
         role: Role;
-        status: 'active' | 'pending' | 'banned';
+        status: 'active' | 'pending' | 'banned' | 'expired';
         points: number;
         level: number;
     } | null;
@@ -173,4 +174,14 @@ export interface EventOccurrence {
     timezone: string;
     location: string | null;
     host: PublicUser;
+}
+
+export interface Plan {
+    id: number;
+    name: string;
+    interval: 'month' | 'year' | 'one_time';
+    amount: number;
+    currency: string;
+    is_active: boolean;
+    gateway: 'stripe' | 'razorpay';
 }

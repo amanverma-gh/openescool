@@ -22,6 +22,11 @@ class MembershipController extends Controller
         $existing = $community->membershipFor($request->user());
         abort_if($existing?->status === CommunityMember::STATUS_BANNED, 403, 'You cannot join this community.');
 
+        // Paid communities: payment is the admission ticket (no approval queue).
+        if ($community->isPaid() && ! $existing?->isActive()) {
+            return to_route('billing.checkout', $community);
+        }
+
         $answers = collect($questions)
             ->mapWithKeys(fn (string $question, int $i) => [$question => $data['answers'][$i] ?? null])
             ->all();

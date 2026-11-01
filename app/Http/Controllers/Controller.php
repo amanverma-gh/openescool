@@ -40,6 +40,7 @@ abstract class Controller
             'icon' => $community->icon,
             'cover' => $community->cover,
             'privacy' => $community->privacy,
+            'access_type' => $community->access_type,
             'members_count' => $community->members_count,
             'membership' => $membership ? [
                 'role' => $membership->role,

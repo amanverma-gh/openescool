@@ -10,7 +10,7 @@ React and Tailwind. Email goes through Brevo, and payments will use Stripe and R
 | --- | --- | --- |
 | 1. Foundation | Auth (email + Google), communities, roles, feed, comments, likes, points/levels, members, profiles, notifications, Brevo | ✅ Done |
 | 2. Classroom, calendar & leaderboards | Courses, modules, lessons, progress, level-locked courses; events with weekly repeats, reminders, add-to-calendar; 7/30-day/all-time leaderboards | ✅ Done |
-| 3. Payments | Stripe + Razorpay subscriptions/one-time, paywalls, webhooks | Planned |
+| 3. Payments | Stripe + Razorpay subscriptions and one-time plans, paywall, webhooks, receipts, member billing page, revenue dashboard | ✅ Done |
 | 4. Gamification & digests | Full leaderboards, level unlocks, daily/weekly email digest | Planned |
 | 5. Deployment | Hostinger guide, install script, CI deploy | Planned |
 
@@ -49,8 +49,29 @@ php artisan app:make-admin you@example.com
 | Email (Brevo SMTP) | `MAIL_MAILER=smtp`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS` | Brevo → SMTP & API → SMTP |
 | Brevo contact sync | `BREVO_API_KEY`, `BREVO_MEMBERS_LIST_ID` | Brevo → SMTP & API → API keys; Contacts → Lists |
 | Google sign-in | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google Cloud Console → Credentials → OAuth client (redirect: `APP_URL/auth/google/callback`) |
+| Stripe | `STRIPE_KEY`, `STRIPE_SECRET`, `STRIPE_WEBHOOK_SECRET` | Stripe → Developers → API keys; Webhooks → endpoint signing secret |
+| Razorpay (INR, UPI) | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` | Razorpay → Account & Settings → API keys; Webhooks (you choose the secret) |
 
 Leave any of these empty to turn that feature off.
+
+
+## Payments
+
+Owners open **Revenue** in their community to add plans (monthly, yearly or one-time, in USD, EUR, GBP, INR, AUD, CAD, SGD or AED), switch the community to **Paid**, and track MRR and payments. Members already in the community keep access when you switch. Non-members of a paid community only see its About page.
+
+- **Stripe** handles every currency through its hosted Checkout page. Members manage cards and invoices in Stripe's Billing Portal (Settings → Billing → Payment methods). In the Stripe dashboard, turn on the Customer portal (Settings → Billing → Customer portal).
+- **Razorpay** handles INR plans when its keys are set, so Indian members can pay with UPI, cards, netbanking or wallets. Without Razorpay keys, INR plans go through Stripe.
+- **Access is granted on payment** (from the success redirect and from webhooks, whichever arrives first) and removed when a subscription ends. Owners, admins and moderators never lose access. A failed renewal leaves a 3-day grace period, and an hourly job ends any subscription whose paid period is over, in case a webhook was missed.
+- Members get an email receipt for each payment. They can cancel from Settings → Billing and keep access until the end of the paid period.
+
+Webhook setup (use test keys first):
+
+| Gateway | Endpoint | Events |
+| --- | --- | --- |
+| Stripe | `APP_URL/webhooks/stripe` | `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `invoice.paid`, `customer.subscription.updated`, `customer.subscription.deleted` |
+| Razorpay | `APP_URL/webhooks/razorpay` | `subscription.activated`, `subscription.charged`, `subscription.pending`, `subscription.halted`, `subscription.cancelled`, `subscription.completed`, `payment.captured` |
+
+To test webhooks on your own computer, use `stripe listen --forward-to localhost:8000/webhooks/stripe`.
 
 ## Background jobs
 

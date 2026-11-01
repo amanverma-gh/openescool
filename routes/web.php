@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\GoogleAuthController;
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CommunityController;
@@ -14,7 +15,9 @@ use App\Http\Controllers\MemberController;
 use App\Http\Controllers\MembershipController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PostController;
+use App\Http\Controllers\PricingController;
 use App\Http\Controllers\UserProfileController;
+use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [CommunityController::class, 'index'])->name('home');
@@ -25,6 +28,10 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::get('u/{user:username}', [UserProfileController::class, 'show'])->name('users.show');
+
+// Signature-verified; CSRF is skipped for webhooks/* in bootstrap/app.php.
+Route::post('webhooks/stripe', [WebhookController::class, 'stripe'])->name('webhooks.stripe');
+Route::post('webhooks/razorpay', [WebhookController::class, 'razorpay'])->name('webhooks.razorpay');
 
 Route::middleware('auth')->group(function () {
     Route::get('dashboard', [CommunityController::class, 'dashboard'])->name('dashboard');
@@ -50,6 +57,16 @@ Route::prefix('c/{community}')->group(function () {
 
     Route::middleware('auth')->group(function () {
         Route::post('join', [MembershipController::class, 'store'])->name('communities.join');
+        Route::get('checkout', [CheckoutController::class, 'show'])->name('billing.checkout');
+        Route::post('checkout/{plan}', [CheckoutController::class, 'store'])->middleware('throttle:10,1')->name('billing.checkout.store');
+        Route::get('checkout/stripe/success', [CheckoutController::class, 'stripeSuccess'])->name('billing.stripe.success');
+        Route::post('checkout/razorpay/confirm', [CheckoutController::class, 'razorpayConfirm'])->name('billing.razorpay.confirm');
+
+        Route::get('revenue', [PricingController::class, 'revenue'])->name('communities.revenue');
+        Route::post('access', [PricingController::class, 'updateAccess'])->name('communities.access');
+        Route::post('plans', [PricingController::class, 'store'])->name('plans.store');
+        Route::patch('plans/{plan}', [PricingController::class, 'update'])->name('plans.update');
+        Route::delete('plans/{plan}', [PricingController::class, 'destroy'])->name('plans.destroy');
         Route::delete('leave', [MembershipController::class, 'destroy'])->name('communities.leave');
 
         Route::middleware('throttle:content')->group(function () {

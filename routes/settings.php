@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BillingController;
 use App\Http\Controllers\Settings\PasswordController;
 use App\Http\Controllers\Settings\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -15,6 +16,11 @@ Route::middleware('auth')->group(function () {
 
     Route::get('settings/password', [PasswordController::class, 'edit'])->name('password.edit');
     Route::put('settings/password', [PasswordController::class, 'update'])->name('password.update');
+
+    Route::get('settings/billing', [BillingController::class, 'index'])->name('billing.index');
+    Route::post('settings/billing/portal', [BillingController::class, 'portal'])->name('billing.portal');
+    Route::post('settings/billing/{subscription}/cancel', [BillingController::class, 'cancel'])->name('billing.cancel');
+    Route::post('settings/billing/{subscription}/resume', [BillingController::class, 'resume'])->name('billing.resume');
 
     Route::get('settings/appearance', function () {
         return Inertia::render('settings/appearance');
