@@ -15,6 +15,8 @@ use App\Http\Controllers\LessonController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\MembershipController;
+use App\Http\Controllers\MessageController;
+use App\Http\Controllers\ModerationController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\PricingController;
@@ -48,6 +50,25 @@ Route::middleware('auth')->group(function () {
     Route::get('notifications/{id}', [NotificationController::class, 'show'])->name('notifications.show');
     Route::post('notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
 
+    Route::get('chat', [MessageController::class, 'index'])->name('chat.index');
+    Route::get('chat/{user:username}', [MessageController::class, 'show'])->name('chat.show');
+    Route::post('chat/{user:username}', [MessageController::class, 'store'])->middleware('throttle:messages')->name('chat.store');
+    Route::post('chat/{user:username}/block', [MessageController::class, 'block'])->name('chat.block');
+    Route::delete('chat/{user:username}/block', [MessageController::class, 'unblock'])->name('chat.unblock');
+
+    Route::post('report/{type}/{id}', [ModerationController::class, 'report'])
+        ->whereIn('type', ['post', 'comment', 'message'])->whereNumber('id')
+        ->middleware('throttle:20,60')->name('report');
+
+    Route::prefix('admin/moderation')->name('moderation.')->controller(ModerationController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('{user}/restrict', 'restrict')->name('restrict');
+        Route::post('{user}/release', 'release')->name('release');
+        Route::post('{user}/ban', 'ban')->name('ban');
+        Route::post('{user}/unban', 'unban')->name('unban');
+        Route::delete('{user}', 'destroy')->name('destroy');
+    });
+
     Route::get('communities/create', [CommunityController::class, 'create'])->name('communities.create');
     Route::post('communities', [CommunityController::class, 'store'])->name('communities.store');
 });
@@ -55,6 +76,7 @@ Route::middleware('auth')->group(function () {
 Route::prefix('c/{community}')->group(function () {
     Route::get('/', [FeedController::class, 'index'])->name('communities.feed');
     Route::get('about', [CommunityController::class, 'show'])->name('communities.about');
+    Route::get('search', [FeedController::class, 'search'])->middleware('throttle:60,1')->name('communities.search');
     Route::get('members', [MemberController::class, 'index'])->name('members.index');
     Route::get('posts/{post}', [PostController::class, 'show'])->name('posts.show');
     Route::get('classroom', [ClassroomController::class, 'index'])->name('classroom.index');

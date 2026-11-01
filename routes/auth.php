@@ -14,7 +14,8 @@ Route::middleware('guest')->group(function () {
     Route::get('register', [RegisteredUserController::class, 'create'])
         ->name('register');
 
-    Route::post('register', [RegisteredUserController::class, 'store']);
+    // Few real people sign up more than a handful of times an hour from one IP.
+    Route::post('register', [RegisteredUserController::class, 'store'])->middleware('throttle:6,60');
 
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');

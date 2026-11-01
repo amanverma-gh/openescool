@@ -12,6 +12,7 @@ React and Tailwind. Email goes through Brevo, and payments will use Stripe and R
 | 2. Classroom, calendar & leaderboards | Courses, modules, lessons, progress, level-locked courses; events with weekly repeats, reminders, add-to-calendar; 7/30-day/all-time leaderboards | ✅ Done |
 | 3. Payments | Stripe + Razorpay subscriptions and one-time plans, paywall, webhooks, receipts, member billing page, revenue dashboard | ✅ Done |
 | 4. Gamification & digests | Daily/weekly email digest, per-type email settings, one-click unsubscribe, level-up notifications, custom level names | ✅ Done |
+| Extras | About page gallery and reviews; community search; direct messages; anti-spam, report and admin review queue | ✅ Done |
 | 5. Deployment | Hostinger guide, install script, CI deploy | Planned |
 
 ## Local setup
@@ -83,6 +84,27 @@ To test webhooks on your own computer, use `stripe listen --forward-to localhost
 - Members get a notification when likes push them to a new level, along with any courses it unlocks. Owners can name each level (Settings → Level names); the names show on the leaderboard and on locked courses.
 
 Send a digest by hand with `php artisan app:send-digests weekly`.
+
+## Search and chat
+
+- **Search:** the search box in a community's top bar finds posts (title and text) and members (name and username).
+- **Chat:** members can message anyone they share a community with, and can always message platform admins. Open a chat from the chat icon in the top bar, or with **Message** on a profile or in the members list. Anyone can block a person from the chat menu. Someone who is away gets one email per unread chat; they can turn it off in Settings → Email.
+
+## Spam protection
+
+Anything that looks like spam is hidden straight away. Its author is put **under review**: they can still read, but they can't post, comment or message until a platform admin decides. Admins get a notification, and the shield icon in the top bar shows how many accounts are waiting.
+
+- **Sign-up:** a hidden honeypot field and a signed form token turn away bots that fill the form in under 3 seconds or post without loading it. Sign-ups are also limited to 6 per hour per IP.
+- **Content filter** (posts, comments, messages): blocked phrases, links from accounts younger than 72 hours, and more than 5 links in one item. You can add your own phrases with `SPAM_KEYWORDS="phrase one,phrase two"` in `.env`. Tune the other limits in `config/spam.php`.
+- **Chat limits:** sending the same message to 3 or more people within 30 minutes counts as a spam blast, and the copies already sent are pulled back too. New accounts can start 5 new chats a day; other members can start 30. Everyone can send up to 15 messages a minute and 300 a day.
+- **Reports:** members can report a post, comment or message as spam. Once 3 different people report someone within 7 days, that account goes under review.
+- **Admin decisions** live at `/admin/moderation`, or under **Admin actions** on any profile:
+  - **Not spam** lifts the review and brings their content back.
+  - **Ban** signs them out for good and hides everything they wrote.
+  - **Delete account** removes the account and all its content.
+  - Admins can also put any account under review by hand.
+
+  Private messages are only ever shown to admins if they were flagged or reported.
 
 ## Background jobs
 

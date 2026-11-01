@@ -59,6 +59,45 @@ class FeedController extends Controller
         ]);
     }
 
+    /**
+     * Search posts (title, body) and members (name, username) in one community.
+     */
+    public function search(Request $request, Community $community): Response
+    {
+        $this->ensureCanView($community);
+
+        $q = mb_substr(trim((string) $request->query('q')), 0, 100);
+        $like = '%'.addcslashes($q, '%_\\').'%';
+        $searching = mb_strlen($q) >= 2;
+
+        $posts = $searching
+            ? $this->present($community, $this->baseQuery($community)
+                ->where(fn (Builder $w) => $w->where('title', 'like', $like)->orWhere('body', 'like', $like))
+                ->orderByDesc('last_activity_at')
+                ->limit(30)
+                ->get())
+            : [];
+
+        $members = $searching
+            ? $community->activeMembers()
+                ->whereHas('user', fn (Builder $u) => $u->whereNull('banned_at')
+                    ->where(fn (Builder $w) => $w->where('name', 'like', $like)->orWhere('username', 'like', $like)))
+                ->with('user')
+                ->orderByDesc('points')
+                ->limit(12)
+                ->get()
+                ->map(fn (CommunityMember $m) => $m->user->toPublicArray() + ['level' => $m->level, 'role' => $m->role])
+                ->all()
+            : [];
+
+        return Inertia::render('communities/search', [
+            'community' => $this->communityProps($community),
+            'q' => $q,
+            'posts' => $posts,
+            'members' => $members,
+        ]);
+    }
+
     protected function baseQuery(Community $community): Builder
     {
         return Post::query()

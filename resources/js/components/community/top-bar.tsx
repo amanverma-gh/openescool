@@ -10,8 +10,45 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { UserMenuContent } from '@/components/user-menu-content';
 import { type CommunityLink, type SharedData } from '@/types';
-import { Link, usePage } from '@inertiajs/react';
-import { Bell, ChevronsUpDown, Compass, Plus } from 'lucide-react';
+import { Link, router, usePage } from '@inertiajs/react';
+import { Bell, ChevronsUpDown, Compass, MessageCircle, Plus, Search, ShieldAlert } from 'lucide-react';
+import { useState } from 'react';
+
+function Badge({ count }: { count: number }) {
+    if (count <= 0) return null;
+
+    return (
+        <span className="absolute top-1 right-1 flex min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] leading-4 font-bold text-white">
+            {count > 9 ? '9+' : count}
+        </span>
+    );
+}
+
+function CommunitySearch({ community }: { community: CommunityLink }) {
+    const params = new URLSearchParams(typeof window === 'undefined' ? '' : window.location.search);
+    const [q, setQ] = useState(params.get('q') ?? '');
+
+    return (
+        <form
+            role="search"
+            className="relative hidden max-w-md flex-1 md:block"
+            onSubmit={(e) => {
+                e.preventDefault();
+                if (q.trim()) router.get(route('communities.search', community.slug), { q: q.trim() });
+            }}
+        >
+            <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+            <input
+                type="search"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Search"
+                aria-label={`Search ${community.name}`}
+                className="bg-muted focus:bg-background focus:ring-ring h-10 w-full rounded-lg pr-3 pl-9 text-sm outline-none focus:ring-2"
+            />
+        </form>
+    );
+}
 
 function CommunityIcon({ community, className = 'size-8' }: { community: Pick<CommunityLink, 'name' | 'icon'>; className?: string }) {
     return community.icon ? (
@@ -74,17 +111,36 @@ export function TopBar({ current }: { current?: CommunityLink }) {
                     </DropdownMenuContent>
                 </DropdownMenu>
 
+                {current && <CommunitySearch community={current} />}
+
                 <div className="ml-auto flex items-center gap-1">
                     {auth.user ? (
                         <>
+                            {current && (
+                                <Button variant="ghost" size="icon" className="md:hidden" asChild>
+                                    <Link href={route('communities.search', current.slug)} aria-label="Search">
+                                        <Search className="size-5" />
+                                    </Link>
+                                </Button>
+                            )}
+                            {auth.user.is_admin && (
+                                <Button variant="ghost" size="icon" className="relative" asChild>
+                                    <Link href={route('moderation.index')} aria-label="Moderation" title="Spam review">
+                                        <ShieldAlert className="size-5" />
+                                        <Badge count={auth.moderationQueue} />
+                                    </Link>
+                                </Button>
+                            )}
+                            <Button variant="ghost" size="icon" className="relative" asChild>
+                                <Link href={route('chat.index')} aria-label="Chats">
+                                    <MessageCircle className="size-5" />
+                                    <Badge count={auth.unreadChats} />
+                                </Link>
+                            </Button>
                             <Button variant="ghost" size="icon" className="relative" asChild>
                                 <Link href={route('notifications.index')} aria-label="Notifications">
                                     <Bell className="size-5" />
-                                    {auth.unreadNotifications > 0 && (
-                                        <span className="absolute top-1 right-1 flex min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] leading-4 font-bold text-white">
-                                            {auth.unreadNotifications > 9 ? '9+' : auth.unreadNotifications}
-                                        </span>
-                                    )}
+                                    <Badge count={auth.unreadNotifications} />
                                 </Link>
                             </Button>
                             <DropdownMenu>

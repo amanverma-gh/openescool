@@ -6,7 +6,7 @@ import CommunityLayout from '@/layouts/community-layout';
 import { cn, isOnline, timeAgo } from '@/lib/utils';
 import { type Community, type Paginated, type PublicUser, type Role, type SharedData } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { MoreHorizontal, Search } from 'lucide-react';
+import { MessageCircle, MoreHorizontal, Search } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 type Member = PublicUser & {
@@ -121,6 +121,13 @@ export default function Members({ community, members, filters, counts }: Members
                                 )}
                             </div>
 
+                            {auth.user && filters.tab !== 'pending' && m.id !== auth.user.id && (
+                                <Button variant="outline" size="sm" className="self-start" asChild>
+                                    <Link href={route('chat.show', m.username)}>
+                                        <MessageCircle /> Message
+                                    </Link>
+                                </Button>
+                            )}
                             {community.can.manage && filters.tab !== 'pending' && m.role !== 'owner' && m.id !== auth.user?.id && (
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>

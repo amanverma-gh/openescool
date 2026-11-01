@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Notifications\Welcome;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
@@ -22,7 +24,28 @@ class RegisteredUserController extends Controller
      */
     public function create(): Response
     {
-        return Inertia::render('auth/register');
+        return Inertia::render('auth/register', ['formToken' => Crypt::encryptString((string) now()->timestamp)]);
+    }
+
+    /**
+     * Bots fill the hidden "website" field, or post without loading the form, or submit
+     * in under 3 seconds. Humans never notice either check.
+     */
+    protected function looksLikeBot(Request $request): bool
+    {
+        if (filled($request->input('website'))) {
+            return true;
+        }
+
+        try {
+            $startedAt = (int) Crypt::decryptString((string) $request->input('form_token'));
+        } catch (DecryptException) {
+            return true;
+        }
+
+        $elapsed = now()->timestamp - $startedAt;
+
+        return $elapsed < 3 || $elapsed > 86400;
     }
 
     /**
@@ -32,6 +55,10 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        if ($this->looksLikeBot($request)) {
+            throw ValidationException::withMessages(['email' => 'Something went wrong. Please reload the page and try again.']);
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,

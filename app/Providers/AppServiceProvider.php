@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\Comment;
+use App\Models\Message;
 use App\Models\Post;
 use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -33,6 +34,7 @@ class AppServiceProvider extends ServiceProvider
             'post' => Post::class,
             'comment' => Comment::class,
             'user' => User::class,
+            'message' => Message::class,
         ]);
 
         JsonResource::withoutWrapping();
@@ -41,6 +43,12 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('content', fn (Request $request) => [
             Limit::perMinute(10)->by($request->user()?->id ?: $request->ip()),
             Limit::perHour(120)->by($request->user()?->id ?: $request->ip()),
+        ]);
+
+        // Chat: fast enough for a real conversation, too slow for a bot blasting DMs.
+        RateLimiter::for('messages', fn (Request $request) => [
+            Limit::perMinute(15)->by($request->user()?->id ?: $request->ip()),
+            Limit::perDay(300)->by($request->user()?->id ?: $request->ip()),
         ]);
 
         if ($this->app->isProduction()) {

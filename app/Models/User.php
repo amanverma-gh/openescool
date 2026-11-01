@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -70,6 +71,8 @@ class User extends Authenticatable
             'is_admin' => 'boolean',
             'email_preferences' => 'array',
             'last_digest_at' => 'datetime',
+            'restricted_at' => 'datetime',
+            'banned_at' => 'datetime',
         ];
     }
 
@@ -79,6 +82,7 @@ class User extends Authenticatable
     public const EMAIL_TYPES = [
         'comments' => 'Replies and comments on my posts',
         'mentions' => 'When someone @mentions me',
+        'messages' => 'New chat messages (when I am away)',
         'membership' => 'Join requests and approvals',
         'events' => 'Event reminders',
         'level_up' => 'When I level up',
@@ -131,6 +135,51 @@ class User extends Authenticatable
     public function memberships(): HasMany
     {
         return $this->hasMany(CommunityMember::class);
+    }
+
+    public function isRestricted(): bool
+    {
+        return $this->restricted_at !== null;
+    }
+
+    public function isBanned(): bool
+    {
+        return $this->banned_at !== null;
+    }
+
+    public function isNew(): bool
+    {
+        return $this->created_at === null || $this->created_at->gt(now()->subHours((int) config('spam.new_account_hours')));
+    }
+
+    /**
+     * Users this user blocked from contacting them.
+     */
+    public function blockedUsers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'user_blocks', 'blocker_id', 'blocked_id');
+    }
+
+    /**
+     * True if either user blocked the other.
+     */
+    public function isBlockedWith(User $other): bool
+    {
+        return DB::table('user_blocks')
+            ->where(fn ($q) => $q->where('blocker_id', $this->id)->where('blocked_id', $other->id))
+            ->orWhere(fn ($q) => $q->where('blocker_id', $other->id)->where('blocked_id', $this->id))
+            ->exists();
+    }
+
+    /**
+     * Direct messages are allowed between people who share an active community
+     * (members can always reach their community's admins this way).
+     */
+    public function sharesCommunityWith(User $other): bool
+    {
+        return CommunityMember::where('user_id', $this->id)->where('status', CommunityMember::STATUS_ACTIVE)
+            ->whereIn('community_id', CommunityMember::where('user_id', $other->id)->where('status', CommunityMember::STATUS_ACTIVE)->select('community_id'))
+            ->exists();
     }
 
     public function subscriptions(): HasMany

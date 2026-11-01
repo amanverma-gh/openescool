@@ -37,6 +37,12 @@ class UserProfileController extends Controller
                 'last_seen_at' => $user->last_seen_at,
                 'is_self' => $viewer?->is($user) ?? false,
             ],
+            // Platform admins get the moderation controls on profiles.
+            'moderation' => $viewer?->is_admin && ! $viewer->is($user) ? [
+                'restricted' => $user->isRestricted(),
+                'banned' => $user->isBanned(),
+                'is_admin' => (bool) $user->is_admin,
+            ] : null,
             'communities' => $communities->map(fn (Community $c) => $c->only(['id', 'name', 'slug', 'icon']) + [
                 'level' => CommunityMember::levelForPoints((int) $c->pivot->points),
                 'role' => $c->pivot->role,

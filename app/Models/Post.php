@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HidesSpam;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,8 +13,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Post extends Model
 {
     use HasFactory, SoftDeletes;
+    use HidesSpam;
 
-    protected $fillable = ['user_id', 'category_id', 'title', 'body', 'is_pinned', 'comments_disabled', 'last_activity_at'];
+    protected $fillable = ['user_id', 'category_id', 'title', 'body', 'is_pinned', 'comments_disabled', 'last_activity_at', 'is_spam'];
 
     protected function casts(): array
     {

@@ -155,6 +155,14 @@ function CommentItem({ comment, ctx, isReply = false }: { comment: Comment; ctx:
                                 Delete
                             </button>
                         )}
+                        {auth.user && auth.user.id !== comment.author.id && (
+                            <button
+                                onClick={() => router.post(route('report', ['comment', comment.id]), {}, { preserveScroll: true })}
+                                className="hover:text-red-600"
+                            >
+                                Report
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>

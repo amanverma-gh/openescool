@@ -9,7 +9,7 @@ import CommunityLayout from '@/layouts/community-layout';
 import { plural, timeAgo } from '@/lib/utils';
 import { type Category, type Comment, type Community, type Post, type SharedData } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { ArrowLeft, MessageCircle, MoreHorizontal, Pencil, Pin, Trash2 } from 'lucide-react';
+import { ArrowLeft, Flag, MessageCircle, MoreHorizontal, Pencil, Pin, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 interface ShowProps {
@@ -61,7 +61,7 @@ export default function Show({ community, categories, post, comments, canComment
                                 </div>
                                 <div className="ml-auto flex items-center gap-2">
                                     {post.is_pinned && <Pin className="text-muted-foreground size-4" aria-label="Pinned" />}
-                                    {(post.can.update || post.can.delete || post.can.pin) && (
+                                    {(post.can.update || post.can.delete || post.can.pin || (auth.user && auth.user.id !== post.author.id)) && (
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
                                                 <Button variant="ghost" size="icon" aria-label="Post options">
@@ -81,6 +81,13 @@ export default function Show({ community, categories, post, comments, canComment
                                                         }
                                                     >
                                                         <Pin className="mr-2" /> {post.is_pinned ? 'Unpin' : 'Pin to feed'}
+                                                    </DropdownMenuItem>
+                                                )}
+                                                {auth.user && auth.user.id !== post.author.id && (
+                                                    <DropdownMenuItem
+                                                        onSelect={() => router.post(route('report', ['post', post.id]), {}, { preserveScroll: true })}
+                                                    >
+                                                        <Flag className="mr-2" /> Report spam
                                                     </DropdownMenuItem>
                                                 )}
                                                 {post.can.delete && (

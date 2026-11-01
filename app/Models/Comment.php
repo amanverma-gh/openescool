@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HidesSpam;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -10,9 +11,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Comment extends Model
 {
+    use HidesSpam;
     use SoftDeletes;
 
-    protected $fillable = ['user_id', 'parent_id', 'body'];
+    protected $fillable = ['user_id', 'parent_id', 'body', 'is_spam'];
 
     public function post(): BelongsTo
     {

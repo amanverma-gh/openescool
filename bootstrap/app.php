@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureNotBanned;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\TrackLastSeen;
 use Illuminate\Foundation\Application;
@@ -18,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
             TrackLastSeen::class,
+            EnsureNotBanned::class,
         ]);
 
         // Webhooks and one-click unsubscribe arrive without a CSRF token; they are signature-verified instead.

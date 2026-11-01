@@ -26,7 +26,8 @@ class CommunityPolicy
      */
     public function participate(User $user, Community $community): bool
     {
-        return (bool) $community->membershipFor($user)?->isActive();
+        // Accounts under spam review can read but not post until an admin decides.
+        return ! $user->isRestricted() && (bool) $community->membershipFor($user)?->isActive();
     }
 
     public function moderate(User $user, Community $community): bool

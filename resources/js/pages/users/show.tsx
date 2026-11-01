@@ -1,20 +1,23 @@
 import { CommunityIcon } from '@/components/community/top-bar';
 import { UserAvatar } from '@/components/community/user-avatar';
 import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import AppLayout from '@/layouts/app-layout';
 import { isOnline, timeAgo } from '@/lib/utils';
-import { type CommunityLink, type PublicUser } from '@/types';
-import { Head, Link } from '@inertiajs/react';
-import { Calendar, Heart, MapPin, MessageCircle } from 'lucide-react';
+import { type CommunityLink, type PublicUser, type SharedData } from '@/types';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Calendar, Heart, MapPin, MessageCircle, ShieldAlert } from 'lucide-react';
 
 interface ProfileProps {
     profile: PublicUser & { bio: string | null; location: string | null; joined_at: string; last_seen_at: string | null; is_self: boolean };
     communities: (CommunityLink & { level: number; role: string })[];
     posts: { id: number; title: string; likes_count: number; comments_count: number; created_at: string; community: CommunityLink }[];
     stats: { posts: number; likes: number };
+    moderation: { restricted: boolean; banned: boolean; is_admin: boolean } | null;
 }
 
-export default function Show({ profile, communities, posts, stats }: ProfileProps) {
+export default function Show({ profile, communities, posts, stats, moderation }: ProfileProps) {
+    const { auth } = usePage<SharedData>().props;
     const online = isOnline(profile.last_seen_at);
 
     return (
@@ -56,6 +59,14 @@ export default function Show({ profile, communities, posts, stats }: ProfileProp
                             <Link href={route('profile.edit')}>Edit profile</Link>
                         </Button>
                     )}
+                    {auth.user && !profile.is_self && !moderation?.banned && (
+                        <Button className="w-full" asChild>
+                            <Link href={route('chat.show', profile.username)}>
+                                <MessageCircle /> Message
+                            </Link>
+                        </Button>
+                    )}
+                    {moderation && !moderation.is_admin && <AdminActions profile={profile} moderation={moderation} />}
                 </aside>
 
                 <div className="space-y-6">
@@ -109,5 +120,51 @@ export default function Show({ profile, communities, posts, stats }: ProfileProp
                 </div>
             </div>
         </AppLayout>
+    );
+}
+
+function AdminActions({ profile, moderation }: { profile: PublicUser; moderation: NonNullable<ProfileProps['moderation']> }) {
+    const post = (name: string) => router.post(route(name, profile.id), {}, { preserveScroll: true });
+
+    return (
+        <div className="border-t pt-4">
+            {(moderation.restricted || moderation.banned) && (
+                <p className="mb-2 text-xs font-medium text-amber-700 dark:text-amber-300">
+                    {moderation.banned ? 'Banned' : 'Under review: can\x27t post or message'}
+                </p>
+            )}
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="w-full">
+                        <ShieldAlert /> Admin actions
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56">
+                    {moderation.banned ? (
+                        <DropdownMenuItem onSelect={() => post('moderation.unban')}>Unban</DropdownMenuItem>
+                    ) : moderation.restricted ? (
+                        <DropdownMenuItem onSelect={() => post('moderation.release')}>Not spam (lift review)</DropdownMenuItem>
+                    ) : (
+                        <DropdownMenuItem onSelect={() => post('moderation.restrict')}>Mark as spammer (hold for review)</DropdownMenuItem>
+                    )}
+                    {!moderation.banned && (
+                        <DropdownMenuItem className="text-red-600" onSelect={() => post('moderation.ban')}>
+                            Ban account
+                        </DropdownMenuItem>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                        className="text-red-600"
+                        onSelect={() => {
+                            if (confirm(`Delete ${profile.name}'s account and everything they posted? This can't be undone.`)) {
+                                router.delete(route('moderation.destroy', profile.id));
+                            }
+                        }}
+                    >
+                        Delete account
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </div>
     );
 }

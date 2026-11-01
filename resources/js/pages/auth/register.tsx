@@ -15,14 +15,19 @@ interface RegisterForm {
     email: string;
     password: string;
     password_confirmation: string;
+    website: string;
+    form_token: string;
 }
 
-export default function Register() {
+export default function Register({ formToken }: { formToken: string }) {
     const { data, setData, post, processing, errors, reset } = useForm<RegisterForm>({
         name: '',
         email: '',
         password: '',
         password_confirmation: '',
+        // Bot traps: a field people never see, and a signed timestamp of when the form loaded.
+        website: '',
+        form_token: formToken,
     });
 
     const submit: FormEventHandler = (e) => {
@@ -38,6 +43,10 @@ export default function Register() {
             <GoogleButton />
 
             <form className="flex flex-col gap-6" onSubmit={submit}>
+                <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
+                    <label htmlFor="website">Website</label>
+                    <input id="website" tabIndex={-1} autoComplete="off" value={data.website} onChange={(e) => setData('website', e.target.value)} />
+                </div>
                 <div className="grid gap-6">
                     <div className="grid gap-2">
                         <Label htmlFor="name">Name</Label>

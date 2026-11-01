@@ -4,6 +4,8 @@ export interface Auth {
     user: User;
     communities: CommunityLink[] | null;
     unreadNotifications: number;
+    unreadChats: number;
+    moderationQueue: number;
 }
 
 export interface BreadcrumbItem {
@@ -39,6 +41,7 @@ export interface User {
     avatar?: string | null;
     bio?: string | null;
     is_admin?: boolean;
+    restricted?: boolean;
     email_verified_at: string | null;
     created_at?: string;
     updated_at?: string;

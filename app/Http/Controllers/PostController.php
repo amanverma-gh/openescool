@@ -8,6 +8,7 @@ use App\Models\Comment;
 use App\Models\Community;
 use App\Models\Post;
 use App\Notifications\Mentioned;
+use App\Services\SpamGuard;
 use App\Support\AuthorLevels;
 use App\Support\Mentions;
 use Illuminate\Database\Eloquent\Builder;
@@ -49,11 +50,18 @@ class PostController extends Controller
         ]);
     }
 
-    public function store(Request $request, Community $community): RedirectResponse
+    public function store(Request $request, Community $community, SpamGuard $spam): RedirectResponse
     {
         $this->authorize('participate', $community);
 
         $data = $this->validated($request, $community);
+
+        if ($reason = $spam->check($request->user(), $data['title'].' '.$data['body'])) {
+            $community->posts()->create([...$data, 'user_id' => $request->user()->id, 'is_spam' => true]);
+            $spam->restrict($request->user(), $reason);
+
+            return back()->with('error', 'Your post is being reviewed by an admin. You can post again once it is approved.');
+        }
 
         $post = $community->posts()->create([...$data, 'user_id' => $request->user()->id]);
 
@@ -67,7 +75,17 @@ class PostController extends Controller
         abort_unless($post->community_id === $community->id, 404);
         $this->authorize('update', $post);
 
-        $post->update($this->validated($request, $community));
+        $data = $this->validated($request, $community);
+
+        // Editing an approved post into spam is a common trick.
+        if ($reason = app(SpamGuard::class)->check($request->user(), $data['title'].' '.$data['body'])) {
+            $post->update([...$data, 'is_spam' => true]);
+            app(SpamGuard::class)->restrict($request->user(), $reason);
+
+            return to_route('communities.feed', $community)->with('error', 'Your post is being reviewed by an admin.');
+        }
+
+        $post->update($data);
 
         return back()->with('success', 'Post updated.');
     }

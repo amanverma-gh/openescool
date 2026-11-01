@@ -7,6 +7,7 @@ use App\Models\Community;
 use App\Models\Post;
 use App\Notifications\Mentioned;
 use App\Notifications\NewComment;
+use App\Services\SpamGuard;
 use App\Support\Mentions;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,7 +17,7 @@ use Illuminate\Validation\Rule;
 
 class CommentController extends Controller
 {
-    public function store(Request $request, Community $community, Post $post): RedirectResponse
+    public function store(Request $request, Community $community, Post $post, SpamGuard $spam): RedirectResponse
     {
         abort_unless($post->community_id === $community->id, 404);
         $this->authorize('comment', $post);
@@ -29,6 +30,13 @@ class CommentController extends Controller
 
         $parent = isset($data['parent_id']) ? Comment::find($data['parent_id']) : null;
         $parent = $parent?->parent_id ? $parent->parent : $parent;
+
+        if ($reason = $spam->check($request->user(), $data['body'])) {
+            $post->comments()->create(['user_id' => $request->user()->id, 'parent_id' => $parent?->id, 'body' => $data['body'], 'is_spam' => true]);
+            $spam->restrict($request->user(), $reason);
+
+            return back()->with('error', 'Your comment is being reviewed by an admin. You can comment again once it is approved.');
+        }
 
         $comment = DB::transaction(function () use ($post, $request, $data, $parent) {
             $comment = $post->comments()->create([
@@ -52,7 +60,16 @@ class CommentController extends Controller
         abort_unless($comment->post->community_id === $community->id, 404);
         $this->authorize('update', $comment);
 
-        $comment->update($request->validate(['body' => ['required', 'string', 'max:5000']]));
+        $data = $request->validate(['body' => ['required', 'string', 'max:5000']]);
+
+        if ($reason = app(SpamGuard::class)->check($request->user(), $data['body'])) {
+            $comment->update([...$data, 'is_spam' => true]);
+            app(SpamGuard::class)->restrict($request->user(), $reason);
+
+            return back()->with('error', 'Your comment is being reviewed by an admin.');
+        }
+
+        $comment->update($data);
 
         return back();
     }
