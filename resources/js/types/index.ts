@@ -79,7 +79,7 @@ export interface Community extends CommunityLink {
         points: number;
         level: number;
     } | null;
-    can: { participate: boolean; moderate: boolean; manage: boolean };
+    can: { participate: boolean; moderate: boolean; manage: boolean; email_post: boolean };
 }
 
 export interface Category {

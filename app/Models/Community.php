@@ -149,6 +149,16 @@ class Community extends Model
     }
 
     /**
+     * Email-to-all-members is limited so members don't get flooded.
+     */
+    public function canEmailPost(): bool
+    {
+        return ! $this->posts()->withoutGlobalScopes()
+            ->where('emailed_at', '>=', now()->subHours(Post::EMAIL_COOLDOWN_HOURS))
+            ->exists();
+    }
+
+    /**
      * @return array{average: float|null, count: int}
      */
     public function ratingSummary(): array

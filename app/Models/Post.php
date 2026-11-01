@@ -21,12 +21,16 @@ class Post extends Model
     /** Upper bound for the per-community "photos per post" setting. */
     public const MAX_ATTACHMENTS = 4;
 
+    /** A community can email one post to all members per this many hours. */
+    public const EMAIL_COOLDOWN_HOURS = 24;
+
     protected function casts(): array
     {
         return [
             'is_pinned' => 'boolean',
             'comments_disabled' => 'boolean',
             'last_activity_at' => 'datetime',
+            'emailed_at' => 'datetime',
             'attachments' => 'array',
         ];
     }

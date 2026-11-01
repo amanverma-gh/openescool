@@ -37,6 +37,11 @@ return [
 
     'mailers' => [
 
+        // Brevo HTTP API (key from Admin settings or BREVO_API_KEY); see AppServiceProvider.
+        'brevo' => [
+            'transport' => 'brevo',
+        ],
+
         'smtp' => [
             'transport' => 'smtp',
             'url' => env('MAIL_URL'),

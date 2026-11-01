@@ -66,6 +66,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('admin/settings', [AppSettingsController::class, 'edit'])->name('admin.settings');
     Route::post('admin/settings', [AppSettingsController::class, 'update'])->name('admin.settings.update');
+    Route::post('admin/settings/test-email', [AppSettingsController::class, 'testEmail'])->middleware('throttle:5,1')->name('admin.settings.test-email');
 
     Route::prefix('admin/moderation')->name('moderation.')->controller(ModerationController::class)->group(function () {
         Route::get('/', 'index')->name('index');

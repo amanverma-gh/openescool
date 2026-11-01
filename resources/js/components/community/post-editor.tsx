@@ -1,11 +1,12 @@
 import { GifPicker, giphyUrl } from '@/components/community/gif-picker';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatFileSize } from '@/lib/utils';
 import { type Category, type Community, type Post } from '@/types';
 import { useForm } from '@inertiajs/react';
-import { ImageIcon, LoaderCircle, X } from 'lucide-react';
+import { ImageIcon, LoaderCircle, Mail, X } from 'lucide-react';
 import { FormEventHandler, useEffect, useMemo, useRef, useState } from 'react';
 
 interface PostEditorProps {
@@ -42,6 +43,7 @@ export function PostEditor({ community, categories, post, onDone, autoFocus }: P
         attachments: [] as File[],
         gif_id: '',
         keep_attachments: (post?.attachments ?? []).map((a) => a.path),
+        email_members: false,
     });
 
     const previews = useMemo(() => data.attachments.map((file) => URL.createObjectURL(file)), [data.attachments]);
@@ -187,6 +189,23 @@ export function PostEditor({ community, categories, post, onDone, autoFocus }: P
                     </Select>
                 )}
                 <InputError message={errors.category_id} />
+                {!post && community.can.manage && (
+                    <label
+                        className={`flex items-center gap-2 text-sm ${community.can.email_post ? '' : 'text-muted-foreground'}`}
+                        title={
+                            community.can.email_post
+                                ? 'Also send this post by email to every member'
+                                : 'A post was already emailed in the last 24 hours. You can email again later.'
+                        }
+                    >
+                        <Checkbox
+                            checked={data.email_members}
+                            disabled={!community.can.email_post}
+                            onCheckedChange={(v) => setData('email_members', v === true)}
+                        />
+                        <Mail className="size-4" /> Email to all members
+                    </label>
+                )}
                 <div className="ml-auto flex gap-2">
                     <Button type="button" variant="ghost" onClick={onDone}>
                         Cancel

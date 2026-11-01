@@ -80,6 +80,7 @@ class User extends Authenticatable
      * Email types a member can switch off. In-app notifications always arrive.
      */
     public const EMAIL_TYPES = [
+        'announcements' => 'Posts that admins email to all members',
         'comments' => 'Replies and comments on my posts',
         'mentions' => 'When someone @mentions me',
         'messages' => 'New chat messages (when I am away)',

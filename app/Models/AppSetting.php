@@ -21,13 +21,14 @@ class AppSetting extends Model
 
     protected $fillable = ['key', 'value'];
 
-    public const SECRETS = ['giphy_api_key'];
+    public const SECRETS = ['giphy_api_key', 'brevo_api_key'];
 
     public static function get(string $key, ?string $default = null): ?string
     {
-        $value = Cache::rememberForever("app-setting:{$key}", fn () => static::find($key)?->value);
+        // '' marks "not set" so a missing value is cached too.
+        $value = Cache::rememberForever("app-setting:{$key}", fn () => static::find($key)?->value ?? '');
 
-        if ($value !== null && in_array($key, self::SECRETS, true)) {
+        if (filled($value) && in_array($key, self::SECRETS, true)) {
             try {
                 $value = Crypt::decryptString($value);
             } catch (DecryptException) {
@@ -49,5 +50,34 @@ class AppSetting extends Model
         }
 
         Cache::forget("app-setting:{$key}");
+    }
+
+    /**
+     * Point mail and Brevo at the keys saved in the app (they win over .env).
+     * Safe to call before migrations have run.
+     */
+    public static function applyToConfig(): void
+    {
+        try {
+            $brevoKey = static::get('brevo_api_key');
+            $fromAddress = static::get('mail_from_address');
+            $fromName = static::get('mail_from_name');
+            $listId = static::get('brevo_members_list_id');
+        } catch (\Throwable) {
+            return; // no database or table yet
+        }
+
+        if ($brevoKey) {
+            config(['services.brevo.key' => $brevoKey, 'mail.default' => 'brevo']);
+        }
+        if ($fromAddress) {
+            config(['mail.from.address' => $fromAddress]);
+        }
+        if ($fromName) {
+            config(['mail.from.name' => $fromName]);
+        }
+        if ($listId) {
+            config(['services.brevo.members_list_id' => $listId]);
+        }
     }
 }

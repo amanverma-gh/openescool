@@ -111,24 +111,8 @@ export default function Settings({ community, settings, categories, media, giphy
                                 <Checkbox checked={form.data.allow_images} onCheckedChange={(v) => form.setData('allow_images', v === true)} />
                                 Members can add photos to posts (JPG, PNG, WebP)
                             </label>
-                            <label className="flex items-center gap-2 text-sm">
-                                <Checkbox checked={form.data.allow_gifs} onCheckedChange={(v) => form.setData('allow_gifs', v === true)} />
-                                Members can add GIFs from GIPHY (one per post)
-                            </label>
-                            {form.data.allow_gifs && !giphyReady && (
-                                <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:bg-amber-950 dark:text-amber-100">
-                                    The GIF picker needs a GIPHY API key. A platform admin can add it under Admin settings.
-                                </p>
-                            )}
-                            <label className="flex items-center gap-2 text-sm">
-                                <Checkbox
-                                    checked={form.data.allow_comment_media}
-                                    onCheckedChange={(v) => form.setData('allow_comment_media', v === true)}
-                                />
-                                Also allow one photo or GIF in comments
-                            </label>
                             {(form.data.allow_images || form.data.allow_gifs) && (
-                                <div className="flex flex-wrap gap-4 pt-1">
+                                <div className="ml-6 flex flex-wrap gap-4 border-l-2 pl-4">
                                     <label className="space-y-1 text-sm">
                                         <span className="text-muted-foreground block text-xs">Photos and GIFs per post</span>
                                         <select
@@ -156,6 +140,22 @@ export default function Settings({ community, settings, categories, media, giphy
                                         />
                                     </label>
                                 </div>
+                            )}
+                            <label className="flex items-center gap-2 text-sm">
+                                <Checkbox
+                                    checked={form.data.allow_comment_media}
+                                    onCheckedChange={(v) => form.setData('allow_comment_media', v === true)}
+                                />
+                                Also allow one photo or GIF in comments
+                            </label>
+                            <label className="flex items-center gap-2 text-sm">
+                                <Checkbox checked={form.data.allow_gifs} onCheckedChange={(v) => form.setData('allow_gifs', v === true)} />
+                                Members can add GIFs from GIPHY (one per post or comment)
+                            </label>
+                            {form.data.allow_gifs && !giphyReady && (
+                                <p className="ml-6 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:bg-amber-950 dark:text-amber-100">
+                                    The GIF picker needs a GIPHY API key. A platform admin can add it under Admin settings.
+                                </p>
                             )}
                         </div>
                     </Field>

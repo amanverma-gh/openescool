@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\CommentResource;
 use App\Http\Resources\PostResource;
+use App\Jobs\BroadcastPost;
 use App\Models\Comment;
 use App\Models\Community;
 use App\Models\Post;
@@ -71,6 +72,18 @@ class PostController extends Controller
         ]);
 
         $this->notifyMentions($post, $post->body);
+
+        // Owners and admins can email a post to every member, once per cooldown window.
+        if ($request->boolean('email_members') && $request->user()->can('manage', $community)) {
+            if (! $community->canEmailPost()) {
+                return back()->with('error', 'Post published, but not emailed: a post was already emailed in the last '.Post::EMAIL_COOLDOWN_HOURS.' hours.');
+            }
+
+            $post->forceFill(['emailed_at' => now()])->save();
+            BroadcastPost::dispatch($post);
+
+            return back()->with('success', 'Post published and being emailed to all members.');
+        }
 
         return back()->with('success', 'Post published.');
     }

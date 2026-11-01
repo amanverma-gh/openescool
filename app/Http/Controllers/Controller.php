@@ -62,6 +62,7 @@ abstract class Controller
                 'participate' => (bool) $user?->can('participate', $community),
                 'moderate' => (bool) $user?->can('moderate', $community),
                 'manage' => (bool) $user?->can('manage', $community),
+                'email_post' => $user?->can('manage', $community) ? $community->canEmailPost() : false,
             ],
         ];
     }

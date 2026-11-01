@@ -2,14 +2,18 @@
 
 namespace App\Providers;
 
+use App\Models\AppSetting;
 use App\Models\Comment;
 use App\Models\Message;
 use App\Models\Post;
 use App\Models\User;
+use App\Services\Brevo\BrevoTransport;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -38,6 +42,19 @@ class AppServiceProvider extends ServiceProvider
         ]);
 
         JsonResource::withoutWrapping();
+
+        // Local Windows PHP often ships without a CA bundle, so HTTPS calls (GIPHY, Brevo) fail
+        // with cURL error 60. Verify against the Windows certificate store instead; Linux servers
+        // already have a bundle and are unaffected.
+        if (PHP_OS_FAMILY === 'Windows' && ! ini_get('curl.cainfo') && defined('CURLSSLOPT_NATIVE_CA')) {
+            Http::globalOptions(['curl' => [CURLOPT_SSL_OPTIONS => CURLSSLOPT_NATIVE_CA]]);
+        }
+
+        // Brevo API mailer: needs only the API key an admin saves in Admin settings.
+        Mail::extend('brevo', fn () => new BrevoTransport((string) config('services.brevo.key')));
+        if (! $this->app->runningUnitTests()) {
+            AppSetting::applyToConfig();
+        }
 
         // Posts and comments: generous for real people, tight enough to stop spam bursts.
         RateLimiter::for('content', fn (Request $request) => [

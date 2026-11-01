@@ -4,12 +4,13 @@ import { findVideoEmbed, RichText, VideoEmbed } from '@/components/community/ric
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
 import CommunityLayout from '@/layouts/community-layout';
 import { cn } from '@/lib/utils';
 import { type Community, type CourseCard, type CourseModule, type Lesson } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, Circle, ExternalLink, MoreHorizontal, Pencil, Plus, Settings } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface ShowProps {
     community: Community;
@@ -275,21 +276,62 @@ function ModuleMenu({
     onMove: (direction: 'up' | 'down') => void;
     onAddLesson: () => void;
 }) {
-    const rename = () => {
-        const title = prompt('Module name', module.title);
-        if (title?.trim()) router.patch(route('modules.update', [community.slug, module.id]), { title }, { preserveScroll: true });
-    };
+    const [renaming, setRenaming] = useState(false);
 
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="size-7" aria-label={`${module.title} options`}>
-                    <MoreHorizontal className="size-4" />
-                </Button>
-            </DropdownMenuTrigger>
+        <>
+            <ModuleNameDialog
+                open={renaming}
+                onOpenChange={setRenaming}
+                title="Rename module"
+                initial={module.title}
+                onSave={(title, done) =>
+                    router.patch(route('modules.update', [community.slug, module.id]), { title }, { preserveScroll: true, onSuccess: done })
+                }
+            />
+            {/* Not modal, so the rename dialog can take focus right after the menu closes. */}
+            <DropdownMenu modal={false}>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="size-7" aria-label={`${module.title} options`}>
+                        <MoreHorizontal className="size-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <ModuleMenuItems
+                    community={community}
+                    module={module}
+                    first={first}
+                    last={last}
+                    onMove={onMove}
+                    onAddLesson={onAddLesson}
+                    onRename={() => setRenaming(true)}
+                />
+            </DropdownMenu>
+        </>
+    );
+}
+
+function ModuleMenuItems({
+    community,
+    module,
+    first,
+    last,
+    onMove,
+    onAddLesson,
+    onRename,
+}: {
+    community: Community;
+    module: CourseModule;
+    first: boolean;
+    last: boolean;
+    onMove: (direction: 'up' | 'down') => void;
+    onAddLesson: () => void;
+    onRename: () => void;
+}) {
+    return (
+        <>
             <DropdownMenuContent align="end">
                 <DropdownMenuItem onSelect={onAddLesson}>Add lesson</DropdownMenuItem>
-                <DropdownMenuItem onSelect={rename}>Rename module</DropdownMenuItem>
+                <DropdownMenuItem onSelect={onRename}>Rename module</DropdownMenuItem>
                 {!first && <DropdownMenuItem onSelect={() => onMove('up')}>Move up</DropdownMenuItem>}
                 {!last && <DropdownMenuItem onSelect={() => onMove('down')}>Move down</DropdownMenuItem>}
                 <DropdownMenuSeparator />
@@ -303,22 +345,81 @@ function ModuleMenu({
                     Delete module
                 </DropdownMenuItem>
             </DropdownMenuContent>
-        </DropdownMenu>
+        </>
     );
 }
 
 function AddModule({ community, courseId }: { community: Community; courseId: number }) {
-    const add = () => {
-        const title = prompt('New module name');
-        if (title?.trim()) router.post(route('modules.store', [community.slug, courseId]), { title }, { preserveScroll: true });
-    };
+    const [open, setOpen] = useState(false);
 
     return (
-        <button
-            onClick={add}
-            className="text-muted-foreground hover:text-foreground hover:bg-accent mt-1 flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm"
-        >
-            <Plus className="size-4" /> Add module
-        </button>
+        <>
+            <button
+                onClick={() => setOpen(true)}
+                className="text-muted-foreground hover:text-foreground hover:bg-accent mt-1 flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm"
+            >
+                <Plus className="size-4" /> Add module
+            </button>
+            <ModuleNameDialog
+                open={open}
+                onOpenChange={setOpen}
+                title="New module"
+                onSave={(title, done) =>
+                    router.post(route('modules.store', [community.slug, courseId]), { title }, { preserveScroll: true, onSuccess: done })
+                }
+            />
+        </>
+    );
+}
+
+/**
+ * Small dialog for naming a module (window.prompt is blocked in some browsers and app webviews).
+ */
+function ModuleNameDialog({
+    open,
+    onOpenChange,
+    title,
+    initial = '',
+    onSave,
+}: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    title: string;
+    initial?: string;
+    onSave: (title: string, done: () => void) => void;
+}) {
+    const [name, setName] = useState(initial);
+    const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+        if (open) setName(initial);
+    }, [open, initial]);
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-sm">
+                <DialogHeader>
+                    <DialogTitle>{title}</DialogTitle>
+                </DialogHeader>
+                <form
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        if (!name.trim()) return;
+                        setSaving(true);
+                        onSave(name.trim(), () => onOpenChange(false));
+                        setTimeout(() => setSaving(false), 400);
+                    }}
+                    className="space-y-4"
+                >
+                    <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Module name" maxLength={120} autoFocus />
+                    <div className="flex justify-end gap-2">
+                        <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+                            Cancel
+                        </Button>
+                        <Button disabled={saving || !name.trim()}>Save</Button>
+                    </div>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }
