@@ -88,7 +88,17 @@ Send a digest by hand with `php artisan app:send-digests weekly`.
 ## Search and chat
 
 - **Search:** the search box in a community's top bar finds posts (title and text) and members (name and username).
-- **Chat:** members can message anyone they share a community with, and can always message platform admins. Open a chat from the chat icon in the top bar, or with **Message** on a profile or in the members list. Anyone can block a person from the chat menu. Someone who is away gets one email per unread chat; they can turn it off in Settings → Email.
+- **Chat:** chat is only between members and the team. Members can message platform admins and the owner, admins and moderators of their communities; the team can message their members. Members can't message each other. Open a chat from the chat icon in the top bar, or with **Message** on a profile or in the members list. Anyone can block a person from the chat menu. Someone who is away gets one email per unread chat; they can turn it off in Settings → Email.
+
+## Photos and GIFs
+
+Each community owner decides in **Settings → Photos and GIFs**. Everything is off by default.
+
+- **Photos in posts:** JPG, PNG or WebP. The owner picks how many per post (1–4) and the max size (default 1 MB; any value from 0.1 to 5 MB, e.g. 0.5). Every upload is checked to be a real image.
+- **GIFs:** picked from GIPHY with search and trending, like WhatsApp. Results are rated PG-13 or lower, and there is one GIF per post. GIFs load from GIPHY, so they use no storage.
+- **Comments:** a separate switch allows one photo or one GIF per comment.
+- **GIPHY key:** a platform admin adds it in the app under **Admin settings** (user menu). It is checked with GIPHY, stored encrypted with `APP_KEY`, and never sent to the browser; searches go through the server. Get a free key at [developers.giphy.com](https://developers.giphy.com/dashboard/).
+- If your server's PHP `upload_max_filesize` / `post_max_size` is lower than the size you allow, raise it in `php.ini`.
 
 ## Spam protection
 

@@ -68,3 +68,7 @@ export function levelLabel(level: number, names?: (string | null)[]): string {
     const name = names?.[level - 1];
     return name ? `Level ${level} · ${name}` : `Level ${level}`;
 }
+
+export function formatFileSize(kb: number): string {
+    return kb >= 1024 ? `${parseFloat((kb / 1024).toFixed(1))} MB` : `${kb} KB`;
+}

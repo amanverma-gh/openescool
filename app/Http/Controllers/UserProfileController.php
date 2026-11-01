@@ -36,6 +36,7 @@ class UserProfileController extends Controller
                 'joined_at' => $user->created_at,
                 'last_seen_at' => $user->last_seen_at,
                 'is_self' => $viewer?->is($user) ?? false,
+                'can_message' => $viewer && ! $viewer->is($user) && ! $user->isBanned() && $viewer->canChatWith($user),
             ],
             // Platform admins get the moderation controls on profiles.
             'moderation' => $viewer?->is_admin && ! $viewer->is($user) ? [

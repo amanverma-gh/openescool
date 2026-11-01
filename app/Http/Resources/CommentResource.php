@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\Comment;
+use App\Services\MediaAttachments;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -22,6 +23,7 @@ class CommentResource extends JsonResource
             'id' => $this->id,
             'parent_id' => $this->parent_id,
             'body' => $this->body,
+            'attachment' => $this->attachment ? MediaAttachments::present($this->attachment) : null,
             'likes_count' => $this->likes_count,
             'liked' => (bool) ($this->liked ?? false),
             'author' => $this->author->toPublicArray() + ['level' => $this->author_level],

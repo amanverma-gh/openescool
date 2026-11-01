@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AppSetting;
 use App\Models\Community;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -43,8 +44,14 @@ abstract class Controller
             'access_type' => $community->access_type,
             'level_names' => $community->levelNames(),
             'members_count' => $community->members_count,
-            'allow_images' => (bool) $community->allow_images,
-            'allow_gifs' => (bool) $community->allow_gifs,
+            'media' => [
+                'images' => (bool) $community->allow_images,
+                // GIFs need the platform GIPHY key as well as the community switch.
+                'gifs' => $community->allow_gifs && filled(AppSetting::get('giphy_api_key')),
+                'comments' => (bool) $community->allow_comment_media,
+                'max_images' => (int) $community->max_images,
+                'max_kb' => (int) $community->max_upload_kb,
+            ],
             'membership' => $membership ? [
                 'role' => $membership->role,
                 'status' => $membership->status,

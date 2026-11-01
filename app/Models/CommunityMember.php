@@ -15,6 +15,9 @@ class CommunityMember extends Model
 
     public const ROLE_MEMBER = 'member';
 
+    /** The community team: these roles can chat with members. */
+    public const STAFF_ROLES = [self::ROLE_OWNER, self::ROLE_ADMIN, self::ROLE_MODERATOR];
+
     public const STATUS_ACTIVE = 'active';
 
     public const STATUS_PENDING = 'pending';

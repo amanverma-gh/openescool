@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Comment;
 use App\Models\Community;
+use App\Models\CommunityMember;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\Post;
@@ -146,25 +147,45 @@ class SpamAndMessagingTest extends TestCase
         $this->assertSame(0, Post::count());
     }
 
-    public function test_members_can_message_each_other_and_admins(): void
+    /**
+     * A member of the community team (can chat with members).
+     */
+    protected function moderator(array $attributes = []): User
+    {
+        $user = $this->established($attributes);
+        $this->community->membershipFor($user)->update(['role' => CommunityMember::ROLE_MODERATOR]);
+
+        return $user;
+    }
+
+    public function test_members_chat_with_the_team_but_not_each_other(): void
     {
         $alice = $this->established();
         $bob = $this->established();
+        $mod = $this->moderator();
 
-        $this->actingAs($alice)->post(route('chat.store', $bob->username), ['body' => 'Hi Bob!'])->assertSessionHasNoErrors();
-        $this->actingAs($alice)->post(route('chat.store', $this->owner->username), ['body' => 'Question for the admin']);
+        $this->actingAs($alice)->post(route('chat.store', $bob->username), ['body' => 'Hi Bob!'])->assertSessionHas('error');
+        $this->actingAs($alice)->post(route('chat.store', $this->owner->username), ['body' => 'Question for the admin'])->assertSessionHasNoErrors();
+        $this->actingAs($alice)->post(route('chat.store', $mod->username), ['body' => 'Question for the mod'])->assertSessionHasNoErrors();
+        $this->actingAs($mod)->post(route('chat.store', $bob->username), ['body' => 'Welcome Bob!'])->assertSessionHasNoErrors();
 
-        $this->assertSame(2, Message::count());
+        $this->assertSame(3, Message::count());
         $this->assertSame(1, Conversation::unreadFor($bob)->count());
 
-        $this->actingAs($bob)->get(route('chat.show', $alice->username))
+        $this->actingAs($bob)->get(route('chat.show', $mod->username))
             ->assertInertia(fn (Assert $page) => $page->component('chat/index')->has('active.messages', 1)->has('conversations', 1));
         $this->assertSame(0, Conversation::unreadFor($bob)->count());
+
+        // The people search and profile button follow the same rule.
+        $this->actingAs($alice)->get(route('chat.index', ['q' => $bob->name]))->assertInertia(fn (Assert $page) => $page->has('people', 0));
+        $this->actingAs($alice)->get(route('chat.index', ['q' => $mod->name]))->assertInertia(fn (Assert $page) => $page->has('people', 1));
+        $this->actingAs($alice)->get(route('users.show', $bob->username))->assertInertia(fn (Assert $page) => $page->where('profile.can_message', false));
+        $this->actingAs($alice)->get(route('users.show', $mod->username))->assertInertia(fn (Assert $page) => $page->where('profile.can_message', true));
     }
 
     public function test_strangers_blocked_and_restricted_users_cannot_message(): void
     {
-        $alice = $this->established();
+        $alice = $this->moderator();
         $stranger = User::factory()->create(['created_at' => now()->subMonth()]);
 
         $this->actingAs($stranger)->post(route('chat.store', $alice->username), ['body' => 'hey'])->assertSessionHas('error');
@@ -182,7 +203,8 @@ class SpamAndMessagingTest extends TestCase
 
     public function test_copy_paste_dm_blast_is_caught(): void
     {
-        $bot = $this->established();
+        // e.g. a hijacked team account blasting members.
+        $bot = $this->moderator();
         $targets = collect(range(1, 3))->map(fn () => $this->established());
 
         foreach ($targets as $target) {
@@ -201,6 +223,7 @@ class SpamAndMessagingTest extends TestCase
     {
         config(['spam.new_conversations_per_day' => [2, 30]]);
         $newbie = $this->member();
+        $this->community->membershipFor($newbie)->update(['role' => CommunityMember::ROLE_MODERATOR]);
 
         foreach (range(1, 3) as $i) {
             $this->actingAs($newbie)->post(route('chat.store', $this->established()->username), ['body' => "hello number {$i}"]);

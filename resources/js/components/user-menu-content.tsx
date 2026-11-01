@@ -3,7 +3,7 @@ import { UserInfo } from '@/components/user-info';
 import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
 import { type User } from '@/types';
 import { Link } from '@inertiajs/react';
-import { LogOut, Settings } from 'lucide-react';
+import { LogOut, Settings, Settings2, ShieldAlert } from 'lucide-react';
 
 interface UserMenuContentProps {
     user: User;
@@ -27,6 +27,22 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
                         Settings
                     </Link>
                 </DropdownMenuItem>
+                {user.is_admin && (
+                    <>
+                        <DropdownMenuItem asChild>
+                            <Link className="block w-full" href={route('moderation.index')} as="button" onClick={cleanup}>
+                                <ShieldAlert className="mr-2" />
+                                Spam review
+                            </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                            <Link className="block w-full" href={route('admin.settings')} as="button" onClick={cleanup}>
+                                <Settings2 className="mr-2" />
+                                Admin settings
+                            </Link>
+                        </DropdownMenuItem>
+                    </>
+                )}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>

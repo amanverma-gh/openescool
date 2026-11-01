@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AppSettingsController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\ClassroomController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\CommunitySettingsController;
 use App\Http\Controllers\EmailPreferencesController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\FeedController;
+use App\Http\Controllers\GiphyController;
 use App\Http\Controllers\LeaderboardController;
 use App\Http\Controllers\LessonController;
 use App\Http\Controllers\LikeController;
@@ -59,6 +61,11 @@ Route::middleware('auth')->group(function () {
     Route::post('report/{type}/{id}', [ModerationController::class, 'report'])
         ->whereIn('type', ['post', 'comment', 'message'])->whereNumber('id')
         ->middleware('throttle:20,60')->name('report');
+
+    Route::get('giphy/search', [GiphyController::class, 'search'])->middleware('throttle:60,1')->name('giphy.search');
+
+    Route::get('admin/settings', [AppSettingsController::class, 'edit'])->name('admin.settings');
+    Route::post('admin/settings', [AppSettingsController::class, 'update'])->name('admin.settings.update');
 
     Route::prefix('admin/moderation')->name('moderation.')->controller(ModerationController::class)->group(function () {
         Route::get('/', 'index')->name('index');

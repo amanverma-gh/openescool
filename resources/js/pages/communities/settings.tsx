@@ -23,14 +23,18 @@ interface SettingsProps {
         requires_approval: boolean;
         allow_images: boolean;
         allow_gifs: boolean;
+        allow_comment_media: boolean;
+        max_images: number;
+        max_upload_mb: number;
         join_questions: string[];
         level_names: (string | null)[];
     };
     categories: (Category & { posts_count: number; position: number })[];
     media: MediaItem[];
+    giphyReady: boolean;
 }
 
-export default function Settings({ community, settings, categories, media }: SettingsProps) {
+export default function Settings({ community, settings, categories, media, giphyReady }: SettingsProps) {
     const form = useForm({
         name: settings.name,
         tagline: settings.tagline ?? '',
@@ -39,6 +43,9 @@ export default function Settings({ community, settings, categories, media }: Set
         requires_approval: settings.requires_approval,
         allow_images: settings.allow_images,
         allow_gifs: settings.allow_gifs,
+        allow_comment_media: settings.allow_comment_media,
+        max_images: settings.max_images,
+        max_upload_mb: String(settings.max_upload_mb),
         join_questions: settings.join_questions,
         level_names: settings.level_names.map((n) => n ?? ''),
         icon: null as File | null,
@@ -98,16 +105,58 @@ export default function Settings({ community, settings, categories, media }: Set
                         Admins must approve new members {form.data.privacy === 'private' && '(always on for private communities)'}
                     </label>
 
-                    <Field label="Attachments in posts">
-                        <div className="space-y-2">
+                    <Field label="Photos and GIFs" error={form.errors.max_images ?? form.errors.max_upload_mb}>
+                        <div className="space-y-3">
                             <label className="flex items-center gap-2 text-sm">
                                 <Checkbox checked={form.data.allow_images} onCheckedChange={(v) => form.setData('allow_images', v === true)} />
-                                Members can add photos (JPG, PNG, WebP, under 1 MB, up to 4 per post)
+                                Members can add photos to posts (JPG, PNG, WebP)
                             </label>
                             <label className="flex items-center gap-2 text-sm">
                                 <Checkbox checked={form.data.allow_gifs} onCheckedChange={(v) => form.setData('allow_gifs', v === true)} />
-                                Members can add GIFs (under 1 MB)
+                                Members can add GIFs from GIPHY (one per post)
                             </label>
+                            {form.data.allow_gifs && !giphyReady && (
+                                <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:bg-amber-950 dark:text-amber-100">
+                                    The GIF picker needs a GIPHY API key. A platform admin can add it under Admin settings.
+                                </p>
+                            )}
+                            <label className="flex items-center gap-2 text-sm">
+                                <Checkbox
+                                    checked={form.data.allow_comment_media}
+                                    onCheckedChange={(v) => form.setData('allow_comment_media', v === true)}
+                                />
+                                Also allow one photo or GIF in comments
+                            </label>
+                            {(form.data.allow_images || form.data.allow_gifs) && (
+                                <div className="flex flex-wrap gap-4 pt-1">
+                                    <label className="space-y-1 text-sm">
+                                        <span className="text-muted-foreground block text-xs">Photos and GIFs per post</span>
+                                        <select
+                                            value={form.data.max_images}
+                                            onChange={(e) => form.setData('max_images', Number(e.target.value))}
+                                            className="border-input bg-background h-9 rounded-md border px-2"
+                                        >
+                                            {[1, 2, 3, 4].map((n) => (
+                                                <option key={n} value={n}>
+                                                    {n}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </label>
+                                    <label className="space-y-1 text-sm">
+                                        <span className="text-muted-foreground block text-xs">Max photo size (MB)</span>
+                                        <Input
+                                            type="number"
+                                            min={0.1}
+                                            max={5}
+                                            step={0.1}
+                                            value={form.data.max_upload_mb}
+                                            onChange={(e) => form.setData('max_upload_mb', e.target.value)}
+                                            className="h-9 w-28"
+                                        />
+                                    </label>
+                                </div>
+                            )}
                         </div>
                     </Field>
 

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HidesSpam;
+use App\Services\MediaAttachments;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -14,7 +15,12 @@ class Comment extends Model
     use HidesSpam;
     use SoftDeletes;
 
-    protected $fillable = ['user_id', 'parent_id', 'body', 'is_spam'];
+    protected $fillable = ['user_id', 'parent_id', 'body', 'is_spam', 'attachment'];
+
+    protected static function booted(): void
+    {
+        static::forceDeleted(fn (Comment $comment) => MediaAttachments::deleteFiles([$comment->attachment]));
+    }
 
     public function post(): BelongsTo
     {

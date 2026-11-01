@@ -4,12 +4,19 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import AppLayout from '@/layouts/app-layout';
 import { isOnline, timeAgo } from '@/lib/utils';
-import { type CommunityLink, type PublicUser, type SharedData } from '@/types';
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { type CommunityLink, type PublicUser } from '@/types';
+import { Head, Link, router } from '@inertiajs/react';
 import { Calendar, Heart, MapPin, MessageCircle, ShieldAlert } from 'lucide-react';
 
 interface ProfileProps {
-    profile: PublicUser & { bio: string | null; location: string | null; joined_at: string; last_seen_at: string | null; is_self: boolean };
+    profile: PublicUser & {
+        bio: string | null;
+        location: string | null;
+        joined_at: string;
+        last_seen_at: string | null;
+        is_self: boolean;
+        can_message: boolean;
+    };
     communities: (CommunityLink & { level: number; role: string })[];
     posts: { id: number; title: string; likes_count: number; comments_count: number; created_at: string; community: CommunityLink }[];
     stats: { posts: number; likes: number };
@@ -17,7 +24,6 @@ interface ProfileProps {
 }
 
 export default function Show({ profile, communities, posts, stats, moderation }: ProfileProps) {
-    const { auth } = usePage<SharedData>().props;
     const online = isOnline(profile.last_seen_at);
 
     return (
@@ -59,7 +65,7 @@ export default function Show({ profile, communities, posts, stats, moderation }:
                             <Link href={route('profile.edit')}>Edit profile</Link>
                         </Button>
                     )}
-                    {auth.user && !profile.is_self && !moderation?.banned && (
+                    {profile.can_message && (
                         <Button className="w-full" asChild>
                             <Link href={route('chat.show', profile.username)}>
                                 <MessageCircle /> Message

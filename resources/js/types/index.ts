@@ -72,8 +72,7 @@ export interface Community extends CommunityLink {
     access_type: 'free' | 'paid';
     level_names: (string | null)[];
     members_count: number;
-    allow_images: boolean;
-    allow_gifs: boolean;
+    media: { images: boolean; gifs: boolean; comments: boolean; max_images: number; max_kb: number };
     membership: {
         role: Role;
         status: 'active' | 'pending' | 'banned' | 'expired';
@@ -119,6 +118,7 @@ export interface Comment {
     id: number;
     parent_id: number | null;
     body: string;
+    attachment: PostAttachment | null;
     likes_count: number;
     liked: boolean;
     author: PublicUser;

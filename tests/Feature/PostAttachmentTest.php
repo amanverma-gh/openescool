@@ -2,12 +2,15 @@
 
 namespace Tests\Feature;
 
+use App\Models\AppSetting;
+use App\Models\Comment;
 use App\Models\Community;
 use App\Models\Post;
 use App\Models\User;
 use App\Services\MembershipService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -17,6 +20,8 @@ class PostAttachmentTest extends TestCase
 
     protected Community $community;
 
+    protected User $owner;
+
     protected User $member;
 
     protected function setUp(): void
@@ -24,38 +29,45 @@ class PostAttachmentTest extends TestCase
         parent::setUp();
         Storage::fake('public');
 
-        $owner = User::factory()->create();
-        $owner->forceFill(['is_admin' => true])->save();
+        $this->owner = User::factory()->create();
+        $this->owner->forceFill(['is_admin' => true])->save();
         $this->community = new Community(['name' => 'Test', 'slug' => 'test', 'privacy' => Community::PRIVACY_PUBLIC]);
-        $this->community->owner()->associate($owner)->save();
-        app(MembershipService::class)->addOwner($this->community, $owner);
+        $this->community->owner()->associate($this->owner)->save();
+        app(MembershipService::class)->addOwner($this->community, $this->owner);
 
         $this->member = User::factory()->create(['created_at' => now()->subMonth()]);
         app(MembershipService::class)->join($this->community, $this->member);
     }
 
     /**
-     * A real 1×1 image (no GD needed), optionally padded past the size limit.
+     * A real 1×1 PNG (no GD needed), optionally padded to a given size.
      */
-    protected function image(string $name, int $padKb = 0): UploadedFile
+    protected function image(string $name = 'a.png', int $padKb = 0): UploadedFile
     {
-        $bytes = str_ends_with($name, '.gif')
-            ? base64_decode('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7')
-            : base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=');
+        $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=');
 
-        return UploadedFile::fake()->createWithContent($name, $bytes.str_repeat("\0", $padKb * 1024));
+        return UploadedFile::fake()->createWithContent($name, $png.str_repeat("\0", $padKb * 1024));
     }
 
-    protected function postWith(array $files)
+    protected function postWith(array $fields)
     {
-        return $this->actingAs($this->member)->post(route('posts.store', $this->community), [
-            'title' => 'Look', 'body' => 'My setup', 'attachments' => $files,
-        ]);
+        return $this->actingAs($this->member)->post(route('posts.store', $this->community), ['title' => 'Look', 'body' => 'My setup', ...$fields]);
     }
 
-    public function test_uploads_are_refused_unless_the_owner_allows_them(): void
+    protected function makePost(): Post
     {
-        $this->postWith([$this->image('a.png')])->assertSessionHasErrors('attachments');
+        return Post::forceCreate(['community_id' => $this->community->id, 'user_id' => $this->owner->id, 'title' => 'Hi', 'body' => 'Hello']);
+    }
+
+    public function test_everything_is_off_by_default(): void
+    {
+        $this->community->refresh();
+        $this->assertFalse($this->community->allow_images);
+        $this->assertFalse($this->community->allow_gifs);
+        $this->assertFalse($this->community->allow_comment_media);
+
+        $this->postWith(['attachments' => [$this->image()]])->assertSessionHasErrors('attachments');
+        $this->postWith(['gif_id' => 'abc123XYZ'])->assertSessionHasErrors('gif_id');
         $this->assertSame(0, Post::count());
     }
 
@@ -63,43 +75,68 @@ class PostAttachmentTest extends TestCase
     {
         $this->community->update(['allow_images' => true]);
 
-        $this->postWith([$this->image('a.png'), $this->image('b.png')])->assertSessionHasNoErrors();
+        $this->postWith(['attachments' => [$this->image('a.png'), $this->image('b.png')]])->assertSessionHasNoErrors();
 
         $post = Post::firstOrFail();
         $this->assertCount(2, $post->attachments);
         Storage::disk('public')->assertExists($post->attachments);
     }
 
-    public function test_gifs_need_their_own_switch(): void
+    public function test_owner_sets_how_many_items_and_how_big(): void
     {
-        $this->community->update(['allow_images' => true]);
-        $this->postWith([$this->image('fun.gif')])->assertSessionHasErrors('attachments.0');
+        $this->community->update(['allow_images' => true, 'max_images' => 1, 'max_upload_kb' => 512]);
 
-        $this->community->update(['allow_gifs' => true]);
-        $this->postWith([$this->image('fun.gif')])->assertSessionHasNoErrors();
-        $this->assertTrue(Post::firstOrFail()->attachmentList()[0]['gif']);
+        $this->postWith(['attachments' => [$this->image('a.png'), $this->image('b.png')]])->assertSessionHasErrors('attachments');
+        $this->postWith(['attachments' => [$this->image('big.png', 600)]])->assertSessionHasErrors('attachments.0');
+        $this->postWith(['attachments' => [$this->image('ok.png', 400)]])->assertSessionHasNoErrors();
+        $this->assertSame(1, Post::count());
     }
 
-    public function test_files_over_1mb_and_more_than_4_are_rejected(): void
+    public function test_settings_page_saves_limits_in_mb(): void
     {
-        $this->community->update(['allow_images' => true]);
+        $this->actingAs($this->owner)->post(route('communities.settings.update', $this->community), [
+            'name' => 'Test', 'privacy' => 'public',
+            'allow_images' => true, 'allow_gifs' => true, 'allow_comment_media' => true,
+            'max_images' => 2, 'max_upload_mb' => 0.5,
+        ])->assertSessionHasNoErrors();
 
-        $this->postWith([$this->image('big.png', 1100)])->assertSessionHasErrors('attachments.0');
-        $this->postWith(array_map(fn ($i) => $this->image("{$i}.png"), range(1, 5)))->assertSessionHasErrors('attachments');
-        $this->assertSame(0, Post::count());
+        $this->community->refresh();
+        $this->assertSame(2, $this->community->max_images);
+        $this->assertSame(512, $this->community->max_upload_kb);
+        $this->assertTrue($this->community->allow_comment_media);
+
+        $this->actingAs($this->owner)->post(route('communities.settings.update', $this->community), [
+            'name' => 'Test', 'privacy' => 'public', 'max_images' => 5, 'max_upload_mb' => 50,
+        ])->assertSessionHasErrors(['max_images', 'max_upload_mb']);
+    }
+
+    public function test_gif_files_are_no_longer_uploaded_but_giphy_gifs_work(): void
+    {
+        $this->community->update(['allow_images' => true, 'allow_gifs' => true]);
+        $gif = UploadedFile::fake()->createWithContent('fun.gif', base64_decode('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'));
+
+        $this->postWith(['attachments' => [$gif]])->assertSessionHasErrors('attachments.0');
+        $this->postWith(['gif_id' => '../../etc'])->assertSessionHasErrors('gif_id');
+
+        $this->postWith(['gif_id' => 'xT9IgG50Fb7Mi0prBC'])->assertSessionHasNoErrors();
+        $this->assertSame([[
+            'path' => 'giphy:xT9IgG50Fb7Mi0prBC',
+            'url' => 'https://media.giphy.com/media/xT9IgG50Fb7Mi0prBC/giphy.gif',
+            'gif' => true,
+        ]], Post::firstOrFail()->attachmentList());
     }
 
     public function test_non_images_are_rejected(): void
     {
         $this->community->update(['allow_images' => true]);
 
-        $this->postWith([UploadedFile::fake()->createWithContent('shell.png', '<?php echo 1;')])->assertSessionHasErrors('attachments.0');
+        $this->postWith(['attachments' => [UploadedFile::fake()->createWithContent('shell.png', '<?php echo 1;')]])->assertSessionHasErrors('attachments.0');
     }
 
     public function test_editing_can_remove_and_add_attachments(): void
     {
         $this->community->update(['allow_images' => true]);
-        $this->postWith([$this->image('a.png'), $this->image('b.png')]);
+        $this->postWith(['attachments' => [$this->image('a.png'), $this->image('b.png')]]);
         $post = Post::firstOrFail();
         [$keep, $drop] = $post->attachments;
 
@@ -114,5 +151,64 @@ class PostAttachmentTest extends TestCase
         $this->assertCount(2, $post->attachments);
         $this->assertSame($keep, $post->attachments[0]);
         Storage::disk('public')->assertMissing($drop);
+    }
+
+    public function test_comments_take_one_photo_or_gif_only_when_allowed(): void
+    {
+        $post = $this->makePost();
+        $this->community->update(['allow_images' => true, 'allow_gifs' => true]);
+
+        // Posts allow media, but comments are a separate switch.
+        $this->actingAs($this->member)->post(route('comments.store', [$this->community, $post]), ['body' => 'Nice', 'image' => $this->image()])
+            ->assertSessionHasErrors('image');
+
+        $this->community->update(['allow_comment_media' => true]);
+
+        $this->actingAs($this->member)->post(route('comments.store', [$this->community, $post]), [
+            'body' => 'Both', 'image' => $this->image(), 'gif_id' => 'xT9IgG50Fb7Mi0prBC',
+        ])->assertSessionHasErrors('image');
+
+        $this->actingAs($this->member)->post(route('comments.store', [$this->community, $post]), ['body' => 'Photo', 'image' => $this->image()])
+            ->assertSessionHasNoErrors();
+        $this->actingAs($this->member)->post(route('comments.store', [$this->community, $post]), ['body' => 'Gif', 'gif_id' => 'xT9IgG50Fb7Mi0prBC'])
+            ->assertSessionHasNoErrors();
+
+        [$photo, $gif] = Comment::oldest('id')->get();
+        Storage::disk('public')->assertExists($photo->attachment);
+        $this->assertSame('giphy:xT9IgG50Fb7Mi0prBC', $gif->attachment);
+
+        // Removing it on edit deletes the file.
+        $this->actingAs($this->member)->patch(route('comments.update', [$this->community, $photo]), ['body' => 'Photo', 'remove_attachment' => true]);
+        $this->assertNull($photo->fresh()->attachment);
+        Storage::disk('public')->assertMissing($photo->attachment);
+    }
+
+    public function test_giphy_key_is_set_in_the_app_and_stored_encrypted(): void
+    {
+        Http::fake(['api.giphy.com/*' => Http::response(['data' => []])]);
+
+        $this->actingAs($this->member)->post(route('admin.settings.update'), ['giphy_api_key' => 'abc123'])->assertForbidden();
+
+        $this->actingAs($this->owner)->post(route('admin.settings.update'), ['giphy_api_key' => 'SecretKey123'])->assertSessionHasNoErrors();
+
+        $this->assertSame('SecretKey123', AppSetting::get('giphy_api_key'));
+        $this->assertStringNotContainsString('SecretKey123', AppSetting::find('giphy_api_key')->getRawOriginal('value'));
+    }
+
+    public function test_gif_search_is_proxied_with_pg13_rating(): void
+    {
+        $this->actingAs($this->member)->getJson(route('giphy.search', ['q' => 'cat']))->assertStatus(503);
+
+        AppSetting::put('giphy_api_key', 'SecretKey123');
+        Http::fake(['api.giphy.com/*' => Http::response(['data' => [
+            ['id' => 'abcde12345', 'title' => 'Cat', 'images' => ['fixed_width_downsampled' => ['url' => 'https://media.giphy.com/x.gif']]],
+        ]])]);
+
+        $this->actingAs($this->member)->getJson(route('giphy.search', ['q' => 'cat']))
+            ->assertOk()
+            ->assertJsonPath('data.0.id', 'abcde12345')
+            ->assertDontSee('SecretKey123');
+
+        Http::assertSent(fn ($request) => str_contains($request->url(), 'rating=pg-13') && str_contains($request->url(), 'q=cat'));
     }
 }

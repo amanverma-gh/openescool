@@ -171,15 +171,29 @@ class User extends Authenticatable
             ->exists();
     }
 
-    /**
-     * Direct messages are allowed between people who share an active community
-     * (members can always reach their community's admins this way).
-     */
     public function sharesCommunityWith(User $other): bool
     {
         return CommunityMember::where('user_id', $this->id)->where('status', CommunityMember::STATUS_ACTIVE)
             ->whereIn('community_id', CommunityMember::where('user_id', $other->id)->where('status', CommunityMember::STATUS_ACTIVE)->select('community_id'))
             ->exists();
+    }
+
+    /**
+     * Chats are between members and the team only: a platform admin, or the
+     * owner/admin/moderator of a community both people are in. Members can't
+     * message each other.
+     */
+    public function canChatWith(User $other): bool
+    {
+        if ($this->is_admin || $other->is_admin) {
+            return true;
+        }
+
+        $active = fn (int $userId) => CommunityMember::where('user_id', $userId)->where('status', CommunityMember::STATUS_ACTIVE);
+
+        // A community where one of the two is on the team and the other is in it too.
+        return $active($this->id)->whereIn('role', CommunityMember::STAFF_ROLES)->whereIn('community_id', $active($other->id)->select('community_id'))->exists()
+            || $active($other->id)->whereIn('role', CommunityMember::STAFF_ROLES)->whereIn('community_id', $active($this->id)->select('community_id'))->exists();
     }
 
     public function subscriptions(): HasMany

@@ -8,6 +8,7 @@ use App\Models\Comment;
 use App\Models\Community;
 use App\Models\Post;
 use App\Notifications\Mentioned;
+use App\Services\MediaAttachments;
 use App\Services\SpamGuard;
 use App\Support\AuthorLevels;
 use App\Support\Mentions;
@@ -17,7 +18,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -142,44 +142,16 @@ class PostController extends Controller
     }
 
     /**
-     * Validate and save new photo/GIF uploads, if this community allows them.
+     * New photos and a GIPHY GIF, up to the community's per-post limit.
      *
      * @param  list<string>  $existing
      * @return list<string>|null
      */
     protected function storeUploads(Request $request, Community $community, array $existing): ?array
     {
-        $types = array_merge(
-            $community->allow_images ? ['jpg', 'jpeg', 'png', 'webp'] : [],
-            $community->allow_gifs ? ['gif'] : [],
-        );
-
-        if (! $request->hasFile('attachments')) {
-            return $existing ?: null;
-        }
-
-        if (! $types) {
-            throw ValidationException::withMessages(['attachments' => 'This community does not allow photos or GIFs.']);
-        }
-
-        $request->validate([
-            'attachments' => ['array', 'max:'.(Post::MAX_ATTACHMENTS - count($existing))],
-            // `image` sniffs the real file type, so a renamed script can't sneak through.
-            'attachments.*' => ['file', 'image', 'mimes:'.implode(',', $types), 'max:'.Post::MAX_ATTACHMENT_KB,
-                // Belt and braces: the bytes must actually decode as an image.
-                fn (string $attribute, $file, $fail) => @getimagesize($file->getRealPath()) ?: $fail('That file is not a valid image.'),
-            ],
-        ], [
-            'attachments.max' => 'You can attach up to '.Post::MAX_ATTACHMENTS.' files.',
-            'attachments.*.max' => 'Each file must be under 1 MB.',
-            'attachments.*.mimes' => 'Allowed here: '.implode(', ', $types).'.',
-        ]);
-
-        foreach ($request->file('attachments') as $file) {
-            $existing[] = $file->store("posts/{$community->id}", 'public');
-        }
-
-        return $existing;
+        return app(MediaAttachments::class)->collect(
+            $request, $community, $existing, (int) $community->max_images, 'attachments', "posts/{$community->id}",
+        ) ?: null;
     }
 
     protected function notifyMentions(Post $post, string $text, ?Comment $comment = null): void

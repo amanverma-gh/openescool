@@ -7,6 +7,7 @@ use App\Models\Community;
 use App\Models\Post;
 use App\Notifications\Mentioned;
 use App\Notifications\NewComment;
+use App\Services\MediaAttachments;
 use App\Services\SpamGuard;
 use App\Support\Mentions;
 use Illuminate\Http\RedirectResponse;
@@ -14,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class CommentController extends Controller
 {
@@ -38,11 +40,14 @@ class CommentController extends Controller
             return back()->with('error', 'Your comment is being reviewed by an admin. You can comment again once it is approved.');
         }
 
-        $comment = DB::transaction(function () use ($post, $request, $data, $parent) {
+        $attachment = $this->attachment($request, $community, null);
+
+        $comment = DB::transaction(function () use ($post, $request, $data, $parent, $attachment) {
             $comment = $post->comments()->create([
                 'user_id' => $request->user()->id,
                 'parent_id' => $parent?->id,
                 'body' => $data['body'],
+                'attachment' => $attachment,
             ]);
 
             $post->increment('comments_count', 1, ['last_activity_at' => now()]);
@@ -69,9 +74,35 @@ class CommentController extends Controller
             return back()->with('error', 'Your comment is being reviewed by an admin.');
         }
 
-        $comment->update($data);
+        $old = $comment->attachment;
+        $kept = $request->boolean('remove_attachment') ? null : $old;
+        $attachment = $this->attachment($request, $community, $kept);
+
+        $comment->update([...$data, 'attachment' => $attachment]);
+        if ($old && $old !== $attachment) {
+            MediaAttachments::deleteFiles([$old]);
+        }
 
         return back();
+    }
+
+    /**
+     * One photo or one GIPHY GIF per comment, when the community allows it.
+     * A new one replaces the current one.
+     */
+    protected function attachment(Request $request, Community $community, ?string $current): ?string
+    {
+        $adding = $request->hasFile('image') || $request->filled('gif_id');
+
+        if (! $adding) {
+            return $current;
+        }
+
+        if (! $community->allow_comment_media) {
+            throw ValidationException::withMessages(['image' => 'Photos and GIFs are turned off for comments here.']);
+        }
+
+        return app(MediaAttachments::class)->collect($request, $community, [], 1, 'image', "comments/{$community->id}")[0] ?? null;
     }
 
     public function destroy(Community $community, Comment $comment): RedirectResponse

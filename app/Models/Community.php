@@ -34,6 +34,9 @@ class Community extends Model
         'level_names',
         'allow_images',
         'allow_gifs',
+        'allow_comment_media',
+        'max_images',
+        'max_upload_kb',
     ];
 
     protected $hidden = ['icon_path', 'cover_path'];
@@ -48,6 +51,9 @@ class Community extends Model
             'level_names' => 'array',
             'allow_images' => 'boolean',
             'allow_gifs' => 'boolean',
+            'allow_comment_media' => 'boolean',
+            'max_images' => 'integer',
+            'max_upload_kb' => 'integer',
         ];
     }
 

@@ -3,13 +3,13 @@
 namespace App\Models;
 
 use App\Models\Concerns\HidesSpam;
+use App\Services\MediaAttachments;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Storage;
 
 class Post extends Model
 {
@@ -18,10 +18,8 @@ class Post extends Model
 
     protected $fillable = ['user_id', 'category_id', 'title', 'body', 'is_pinned', 'comments_disabled', 'last_activity_at', 'is_spam', 'attachments'];
 
-    /** Photos and GIFs per post, each at most MAX_ATTACHMENT_KB. */
+    /** Upper bound for the per-community "photos per post" setting. */
     public const MAX_ATTACHMENTS = 4;
-
-    public const MAX_ATTACHMENT_KB = 1024;
 
     protected function casts(): array
     {
@@ -44,13 +42,11 @@ class Post extends Model
     }
 
     /**
-     * @param  list<string>  $paths
+     * @param  list<string>  $entries
      */
-    public static function deleteFiles(array $paths): void
+    public static function deleteFiles(array $entries): void
     {
-        if ($paths) {
-            Storage::disk('public')->delete($paths);
-        }
+        MediaAttachments::deleteFiles($entries);
     }
 
     /**
@@ -58,11 +54,7 @@ class Post extends Model
      */
     public function attachmentList(): array
     {
-        return array_map(fn (string $path) => [
-            'path' => $path,
-            'url' => Storage::disk('public')->url($path),
-            'gif' => str_ends_with(strtolower($path), '.gif'),
-        ], $this->attachments ?? []);
+        return array_map(MediaAttachments::present(...), $this->attachments ?? []);
     }
 
     public function community(): BelongsTo

@@ -1,14 +1,12 @@
+import { GifPicker, giphyUrl } from '@/components/community/gif-picker';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { formatFileSize } from '@/lib/utils';
 import { type Category, type Community, type Post } from '@/types';
 import { useForm } from '@inertiajs/react';
 import { ImageIcon, LoaderCircle, X } from 'lucide-react';
 import { FormEventHandler, useEffect, useMemo, useRef, useState } from 'react';
-
-// Keep in sync with Post::MAX_ATTACHMENTS / MAX_ATTACHMENT_KB.
-const MAX_FILES = 4;
-const MAX_BYTES = 1024 * 1024;
 
 interface PostEditorProps {
     community: Community;
@@ -20,12 +18,13 @@ interface PostEditorProps {
 
 /**
  * Create or edit a post. Admin-only categories are hidden from regular members.
- * Photos and GIFs show up only when the community owner allows them.
+ * Photos and GIPHY GIFs show up only when the community owner allows them,
+ * within the owner's limits (how many per post, max photo size).
  */
 export function PostEditor({ community, categories, post, onDone, autoFocus }: PostEditorProps) {
     const available = categories.filter((c) => !c.admin_only || community.can.moderate || c.id === post?.category?.id);
+    const { images, gifs, max_images: maxItems, max_kb: maxKb } = community.media;
     const photoInput = useRef<HTMLInputElement>(null);
-    const gifInput = useRef<HTMLInputElement>(null);
     const [fileError, setFileError] = useState<string | null>(null);
 
     const {
@@ -41,6 +40,7 @@ export function PostEditor({ community, categories, post, onDone, autoFocus }: P
         body: post?.body ?? '',
         category_id: post?.category?.id ?? available[0]?.id ?? null,
         attachments: [] as File[],
+        gif_id: '',
         keep_attachments: (post?.attachments ?? []).map((a) => a.path),
     });
 
@@ -48,16 +48,18 @@ export function PostEditor({ community, categories, post, onDone, autoFocus }: P
     useEffect(() => () => previews.forEach((url) => URL.revokeObjectURL(url)), [previews]);
 
     const kept = (post?.attachments ?? []).filter((a) => data.keep_attachments.includes(a.path));
-    const total = kept.length + data.attachments.length;
+    const hasGif = !!data.gif_id || kept.some((a) => a.gif);
+    const total = kept.length + data.attachments.length + (data.gif_id ? 1 : 0);
+    const full = total >= maxItems;
 
     const addFiles = (files: FileList | null) => {
         setFileError(null);
         const picked = Array.from(files ?? []);
-        const tooBig = picked.filter((f) => f.size > MAX_BYTES);
-        const ok = picked.filter((f) => f.size <= MAX_BYTES).slice(0, MAX_FILES - total);
+        const tooBig = picked.filter((f) => f.size > maxKb * 1024);
+        const ok = picked.filter((f) => f.size <= maxKb * 1024).slice(0, maxItems - total);
 
-        if (tooBig.length) setFileError(`${tooBig.map((f) => f.name).join(', ')}: each file must be under 1 MB.`);
-        else if (ok.length < picked.length) setFileError(`You can attach up to ${MAX_FILES} files.`);
+        if (tooBig.length) setFileError(`${tooBig.map((f) => f.name).join(', ')}: each photo must be under ${formatFileSize(maxKb)}.`);
+        else if (ok.length < picked.length) setFileError(`You can attach up to ${maxItems} ${maxItems === 1 ? 'item' : 'items'}.`);
 
         setData('attachments', [...data.attachments, ...ok]);
     };
@@ -82,9 +84,7 @@ export function PostEditor({ community, categories, post, onDone, autoFocus }: P
         }
     };
 
-    const attachmentErrors = Object.entries(errors)
-        .filter(([key]) => key.startsWith('attachments'))
-        .map(([, message]) => message);
+    const attachmentError = fileError ?? Object.entries(errors).find(([key]) => key.startsWith('attachments') || key === 'gif_id')?.[1];
 
     return (
         <form onSubmit={submit} className="space-y-3">
@@ -114,7 +114,7 @@ export function PostEditor({ community, categories, post, onDone, autoFocus }: P
             {total > 0 && (
                 <div className="grid grid-cols-4 gap-2 px-3">
                     {kept.map((a) => (
-                        <Thumb
+                        <MediaThumb
                             key={a.path}
                             src={a.url}
                             gif={a.gif}
@@ -127,10 +127,9 @@ export function PostEditor({ community, categories, post, onDone, autoFocus }: P
                         />
                     ))}
                     {data.attachments.map((file, i) => (
-                        <Thumb
+                        <MediaThumb
                             key={`${file.name}-${i}`}
                             src={previews[i]}
-                            gif={file.type === 'image/gif'}
                             onRemove={() =>
                                 setData(
                                     'attachments',
@@ -139,20 +138,21 @@ export function PostEditor({ community, categories, post, onDone, autoFocus }: P
                             }
                         />
                     ))}
+                    {data.gif_id && <MediaThumb src={giphyUrl(data.gif_id)} gif onRemove={() => setData('gif_id', '')} />}
                 </div>
             )}
-            {(fileError || attachmentErrors.length > 0) && <InputError message={fileError ?? attachmentErrors[0]} className="px-3" />}
+            {attachmentError && <InputError message={attachmentError} className="px-3" />}
 
             <div className="flex flex-wrap items-center gap-2 border-t pt-3">
-                {community.allow_images && (
+                {images && (
                     <>
                         <Button
                             type="button"
                             variant="ghost"
                             size="icon"
-                            title="Add photo (under 1 MB)"
+                            title={`Add photo (under ${formatFileSize(maxKb)})`}
                             aria-label="Add photo"
-                            disabled={total >= MAX_FILES}
+                            disabled={full}
                             onClick={() => photoInput.current?.click()}
                         >
                             <ImageIcon className="size-5" />
@@ -161,7 +161,7 @@ export function PostEditor({ community, categories, post, onDone, autoFocus }: P
                             ref={photoInput}
                             type="file"
                             accept="image/jpeg,image/png,image/webp"
-                            multiple
+                            multiple={maxItems > 1}
                             hidden
                             onChange={(e) => {
                                 addFiles(e.target.files);
@@ -170,32 +170,8 @@ export function PostEditor({ community, categories, post, onDone, autoFocus }: P
                         />
                     </>
                 )}
-                {community.allow_gifs && (
-                    <>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-9 px-2 text-xs font-bold"
-                            title="Add GIF (under 1 MB)"
-                            disabled={total >= MAX_FILES}
-                            onClick={() => gifInput.current?.click()}
-                        >
-                            <span className="rounded border-2 border-current px-1 leading-4">GIF</span>
-                        </Button>
-                        <input
-                            ref={gifInput}
-                            type="file"
-                            accept="image/gif"
-                            multiple
-                            hidden
-                            onChange={(e) => {
-                                addFiles(e.target.files);
-                                e.target.value = '';
-                            }}
-                        />
-                    </>
-                )}
+                {/* One GIF per post. */}
+                {gifs && <GifPicker disabled={full || hasGif} onPick={(gif) => setData('gif_id', gif.id)} />}
                 {available.length > 0 && (
                     <Select value={data.category_id ? String(data.category_id) : undefined} onValueChange={(v) => setData('category_id', Number(v))}>
                         <SelectTrigger className="h-9 w-48">
@@ -225,9 +201,19 @@ export function PostEditor({ community, categories, post, onDone, autoFocus }: P
     );
 }
 
-function Thumb({ src, gif, onRemove }: { src: string; gif: boolean; onRemove: () => void }) {
+export function MediaThumb({
+    src,
+    gif = false,
+    onRemove,
+    className = 'aspect-square',
+}: {
+    src: string;
+    gif?: boolean;
+    onRemove: () => void;
+    className?: string;
+}) {
     return (
-        <div className="bg-muted relative aspect-square overflow-hidden rounded-lg border">
+        <div className={`bg-muted relative overflow-hidden rounded-lg border ${className}`}>
             <img src={src} alt="" className="size-full object-cover" />
             {gif && <span className="absolute bottom-1 left-1 rounded bg-black/70 px-1 text-[10px] font-bold text-white">GIF</span>}
             <button

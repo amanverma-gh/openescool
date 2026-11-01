@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CommunityMember;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\User;
@@ -154,7 +155,7 @@ class MessageController extends Controller
             $from->isRestricted() => 'Your account is under review, so messaging is paused until an admin checks it.',
             $to->isBanned() => 'This account is no longer active.',
             $from->isBlockedWith($to) => "You can't message this person.",
-            ! $from->is_admin && ! $to->is_admin && ! $from->sharesCommunityWith($to) => 'You can message people once you are in the same community.',
+            ! $from->canChatWith($to) => 'Chat is for talking with the community team. Members can’t message each other.',
             default => null,
         };
     }
@@ -183,15 +184,21 @@ class MessageController extends Controller
     protected function searchPeople(User $me, string $search): array
     {
         $like = '%'.addcslashes($search, '%_\\').'%';
-        $myCommunities = $me->memberships()->where('status', 'active')->select('community_id');
+        $mine = fn () => $me->memberships()->where('status', CommunityMember::STATUS_ACTIVE);
+        $myCommunities = $mine()->select('community_id');
+        $myTeamCommunities = $mine()->whereIn('role', CommunityMember::STAFF_ROLES)->select('community_id');
 
+        // Same rule as canChatWith(): the team of my communities, or the members of communities I run.
         return User::query()
             ->whereKeyNot($me->id)
             ->whereNull('banned_at')
             ->where(fn ($q) => $q->where('name', 'like', $like)->orWhere('username', 'like', $like))
             ->when(! $me->is_admin, fn ($q) => $q->where(fn ($q) => $q
                 ->where('is_admin', true)
-                ->orWhereHas('memberships', fn ($m) => $m->where('status', 'active')->whereIn('community_id', $myCommunities))))
+                ->orWhereHas('memberships', fn ($m) => $m->where('status', CommunityMember::STATUS_ACTIVE)
+                    ->whereIn('role', CommunityMember::STAFF_ROLES)->whereIn('community_id', $myCommunities))
+                ->orWhereHas('memberships', fn ($m) => $m->where('status', CommunityMember::STATUS_ACTIVE)
+                    ->whereIn('community_id', $myTeamCommunities))))
             ->limit(8)
             ->get()
             ->map->toPublicArray()
