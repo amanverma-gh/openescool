@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Comment;
+use App\Models\PointEvent;
 use App\Models\Post;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -31,6 +32,7 @@ class LikeService
             }
 
             $community->members()->where('user_id', $likeable->user_id)->increment('points', $delta);
+            PointEvent::create(['community_id' => $community->id, 'user_id' => $likeable->user_id, 'points' => $delta]);
 
             return ! $existing;
         });

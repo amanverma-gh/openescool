@@ -85,6 +85,16 @@ class Community extends Model
         return $this->hasMany(Post::class);
     }
 
+    public function courses(): HasMany
+    {
+        return $this->hasMany(Course::class)->orderBy('position');
+    }
+
+    public function events(): HasMany
+    {
+        return $this->hasMany(Event::class);
+    }
+
     /**
      * Per-instance cache so policy checks don't re-query on every call.
      *

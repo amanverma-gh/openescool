@@ -26,3 +26,4 @@ Artisan::command('app:make-admin {email}', function (string $email) {
 // which drains the queue (emails, Brevo sync) and then exits.
 Schedule::command('queue:work --stop-when-empty --max-time=50')->everyMinute()->withoutOverlapping();
 Schedule::command('queue:prune-failed --hours=168')->daily();
+Schedule::command('app:send-event-reminders')->everyFiveMinutes()->withoutOverlapping();

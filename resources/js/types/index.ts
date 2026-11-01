@@ -121,3 +121,56 @@ export interface Paginated<T> {
     prev_page_url: string | null;
     next_page_url: string | null;
 }
+
+export interface CourseCard {
+    id: number;
+    title: string;
+    description: string | null;
+    cover: string | null;
+    access: 'open' | 'level';
+    unlock_level: number | null;
+    is_published: boolean;
+    lessons_count?: number;
+    unlocked?: boolean;
+    progress: number;
+}
+
+export interface LessonResource {
+    label: string;
+    url: string;
+}
+
+export interface CourseModule {
+    id: number;
+    title: string;
+    lessons: { id: number; title: string; is_published: boolean; completed: boolean }[];
+}
+
+export interface Lesson {
+    id: number;
+    title: string;
+    body: string | null;
+    video_url: string | null;
+    resources: LessonResource[] | null;
+    is_published: boolean;
+    course_module_id: number;
+    completed: boolean;
+    previous_id: number | null;
+    next_id: number | null;
+}
+
+export interface EventOccurrence {
+    key: string;
+    event_id: number;
+    title: string;
+    description: string | null;
+    starts_at: string;
+    ends_at: string;
+    first_starts_at: string;
+    duration_minutes: number;
+    recurrence: 'none' | 'weekly';
+    repeat_until: string | null;
+    timezone: string;
+    location: string | null;
+    host: PublicUser;
+}

@@ -9,7 +9,7 @@ React and Tailwind. Email goes through Brevo, and payments will use Stripe and R
 | Phase | Scope | Status |
 | --- | --- | --- |
 | 1. Foundation | Auth (email + Google), communities, roles, feed, comments, likes, points/levels, members, profiles, notifications, Brevo | ✅ Done |
-| 2. Classroom & calendar | Courses, modules, lessons, progress, events, reminders | Planned |
+| 2. Classroom, calendar & leaderboards | Courses, modules, lessons, progress, level-locked courses; events with weekly repeats, reminders, add-to-calendar; 7/30-day/all-time leaderboards | ✅ Done |
 | 3. Payments | Stripe + Razorpay subscriptions/one-time, paywalls, webhooks | Planned |
 | 4. Gamification & digests | Full leaderboards, level unlocks, daily/weekly email digest | Planned |
 | 5. Deployment | Hostinger guide, install script, CI deploy | Planned |

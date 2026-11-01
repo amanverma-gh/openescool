@@ -15,7 +15,10 @@ export default function CommunityLayout({ community, children }: CommunityLayout
 
     const tabs = [
         { title: 'Community', href: base, active: path === base || path.startsWith(`${base}/posts`) },
+        { title: 'Classroom', href: `${base}/classroom`, active: path.startsWith(`${base}/classroom`) },
+        { title: 'Calendar', href: `${base}/calendar`, active: path.startsWith(`${base}/calendar`) },
         { title: 'Members', href: `${base}/members`, active: path.startsWith(`${base}/members`) },
+        { title: 'Leaderboards', href: `${base}/leaderboards`, active: path.startsWith(`${base}/leaderboards`) },
         { title: 'About', href: `${base}/about`, active: path.startsWith(`${base}/about`) },
         ...(community.can.manage ? [{ title: 'Settings', href: `${base}/settings`, active: path.startsWith(`${base}/settings`) }] : []),
     ];

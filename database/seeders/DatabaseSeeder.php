@@ -3,6 +3,9 @@
 namespace Database\Seeders;
 
 use App\Models\Community;
+use App\Models\Course;
+use App\Models\Event;
+use App\Models\PointEvent;
 use App\Models\Post;
 use App\Models\User;
 use App\Services\LikeService;
@@ -76,6 +79,74 @@ class DatabaseSeeder extends Seeder
                     $likes->toggle($liker, $post);
                 }
             }
+        }
+
+        // Spread point history over the last 45 days so 7/30-day boards differ.
+        PointEvent::query()->each(fn (PointEvent $e) => $e->forceFill(['created_at' => now()->subDays(rand(0, 45))])->save());
+
+        $this->seedClassroom($community);
+        $this->seedEvents($community, $admin);
+    }
+
+    protected function seedClassroom(Community $community): void
+    {
+        $course = $community->courses()->create([
+            'title' => 'Start Here: Community Onboarding',
+            'description' => 'Everything you need to get the most out of this community in your first week.',
+            'is_published' => true,
+            'position' => 0,
+        ]);
+
+        $outline = [
+            'Welcome' => ['Welcome to the community', 'How this community works', 'Introduce yourself'],
+            'Your first week' => ['Set your 30-day goal', 'Join your first live call'],
+        ];
+
+        foreach (array_keys($outline) as $m => $moduleTitle) {
+            $module = $course->modules()->create(['title' => $moduleTitle, 'position' => $m]);
+            foreach ($outline[$moduleTitle] as $l => $lessonTitle) {
+                $module->lessons()->create([
+                    'course_id' => $course->id,
+                    'title' => $lessonTitle,
+                    'body' => fake()->paragraphs(3, true),
+                    'video_url' => $l === 0 ? 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' : null,
+                    'resources' => $l === 0 ? [['label' => 'Community guidelines', 'url' => 'https://example.com/guidelines']] : [],
+                    'position' => $l,
+                ]);
+            }
+        }
+
+        $community->courses()->create([
+            'title' => 'Advanced Growth Playbook',
+            'description' => 'Unlocks at level 3. Deeper strategies for members who are actively contributing.',
+            'access' => Course::ACCESS_LEVEL,
+            'unlock_level' => 3,
+            'is_published' => true,
+            'position' => 1,
+        ])->modules()->create(['title' => 'Module 1', 'position' => 0]);
+    }
+
+    protected function seedEvents(Community $community, User $host): void
+    {
+        $weekly = new Event([
+            'title' => 'Weekly Q&A call',
+            'description' => 'Bring your questions. We go through wins, blockers and hot seats.',
+            'starts_at' => now()->next('Thursday')->setTime(17, 0),
+            'duration_minutes' => 60,
+            'recurrence' => Event::RECURRENCE_WEEKLY,
+            'location' => 'https://zoom.us/j/1234567890',
+        ]);
+        $workshop = new Event([
+            'title' => 'Live workshop: Build your offer',
+            'starts_at' => now()->addDays(10)->setTime(15, 30),
+            'duration_minutes' => 90,
+            'location' => 'https://meet.google.com/abc-defg-hij',
+        ]);
+
+        foreach ([$weekly, $workshop] as $event) {
+            $event->community()->associate($community);
+            $event->host()->associate($host);
+            $event->save();
         }
     }
 }

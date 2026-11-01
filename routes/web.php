@@ -1,10 +1,14 @@
 <?php
 
 use App\Http\Controllers\Auth\GoogleAuthController;
+use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\CommunitySettingsController;
+use App\Http\Controllers\EventController;
 use App\Http\Controllers\FeedController;
+use App\Http\Controllers\LeaderboardController;
+use App\Http\Controllers\LessonController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\MembershipController;
@@ -38,6 +42,11 @@ Route::prefix('c/{community}')->group(function () {
     Route::get('about', [CommunityController::class, 'show'])->name('communities.about');
     Route::get('members', [MemberController::class, 'index'])->name('members.index');
     Route::get('posts/{post}', [PostController::class, 'show'])->name('posts.show');
+    Route::get('classroom', [ClassroomController::class, 'index'])->name('classroom.index');
+    Route::get('classroom/{course}', [ClassroomController::class, 'show'])->name('classroom.show');
+    Route::get('calendar', [EventController::class, 'index'])->name('calendar.index');
+    Route::get('calendar/{event}.ics', [EventController::class, 'ics'])->name('events.ics');
+    Route::get('leaderboards', [LeaderboardController::class, 'index'])->name('leaderboards.index');
 
     Route::middleware('auth')->group(function () {
         Route::post('join', [MembershipController::class, 'store'])->name('communities.join');
@@ -59,6 +68,22 @@ Route::prefix('c/{community}')->group(function () {
         Route::post('members/{member}/approve', [MemberController::class, 'approve'])->name('members.approve');
         Route::patch('members/{member}', [MemberController::class, 'update'])->name('members.update');
         Route::delete('members/{member}', [MemberController::class, 'destroy'])->name('members.destroy');
+
+        Route::post('classroom', [ClassroomController::class, 'store'])->name('courses.store');
+        Route::post('classroom/{course}', [ClassroomController::class, 'update'])->name('courses.update');
+        Route::delete('classroom/{course}', [ClassroomController::class, 'destroy'])->name('courses.destroy');
+        Route::post('classroom/{course}/modules', [LessonController::class, 'storeModule'])->name('modules.store');
+        Route::patch('modules/{module}', [LessonController::class, 'updateModule'])->name('modules.update');
+        Route::delete('modules/{module}', [LessonController::class, 'destroyModule'])->name('modules.destroy');
+        Route::post('modules/{module}/lessons', [LessonController::class, 'store'])->name('lessons.store');
+        Route::patch('lessons/{lesson}', [LessonController::class, 'update'])->name('lessons.update');
+        Route::delete('lessons/{lesson}', [LessonController::class, 'destroy'])->name('lessons.destroy');
+        Route::post('lessons/{lesson}/complete', [LessonController::class, 'complete'])->name('lessons.complete');
+        Route::post('move/{type}/{id}', [LessonController::class, 'move'])->whereIn('type', ['module', 'lesson'])->whereNumber('id')->name('classroom.move');
+
+        Route::post('calendar', [EventController::class, 'store'])->name('events.store');
+        Route::patch('calendar/{event}', [EventController::class, 'update'])->name('events.update');
+        Route::delete('calendar/{event}', [EventController::class, 'destroy'])->name('events.destroy');
 
         Route::get('settings', [CommunitySettingsController::class, 'edit'])->name('communities.settings');
         Route::post('settings', [CommunitySettingsController::class, 'update'])->name('communities.settings.update');
