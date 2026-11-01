@@ -31,6 +31,7 @@ class Community extends Model
         'access_type',
         'requires_approval',
         'join_questions',
+        'level_names',
     ];
 
     protected $hidden = ['icon_path', 'cover_path'];
@@ -42,6 +43,7 @@ class Community extends Model
         return [
             'requires_approval' => 'boolean',
             'join_questions' => 'array',
+            'level_names' => 'array',
         ];
     }
 
@@ -58,6 +60,24 @@ class Community extends Model
     public function getCoverAttribute(): ?string
     {
         return $this->cover_path ? Storage::disk('public')->url($this->cover_path) : null;
+    }
+
+    /**
+     * "Level 3 (Builder)" when the owner named the level, else "Level 3".
+     */
+    public function levelLabel(int $level): string
+    {
+        $name = $this->level_names[$level - 1] ?? null;
+
+        return $name ? "Level {$level} ({$name})" : "Level {$level}";
+    }
+
+    /**
+     * @return list<string|null>
+     */
+    public function levelNames(): array
+    {
+        return array_map(fn (int $i) => $this->level_names[$i] ?? null, array_keys(CommunityMember::LEVEL_THRESHOLDS));
     }
 
     public function isPublic(): bool

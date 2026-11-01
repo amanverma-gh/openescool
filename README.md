@@ -11,7 +11,7 @@ React and Tailwind. Email goes through Brevo, and payments will use Stripe and R
 | 1. Foundation | Auth (email + Google), communities, roles, feed, comments, likes, points/levels, members, profiles, notifications, Brevo | ✅ Done |
 | 2. Classroom, calendar & leaderboards | Courses, modules, lessons, progress, level-locked courses; events with weekly repeats, reminders, add-to-calendar; 7/30-day/all-time leaderboards | ✅ Done |
 | 3. Payments | Stripe + Razorpay subscriptions and one-time plans, paywall, webhooks, receipts, member billing page, revenue dashboard | ✅ Done |
-| 4. Gamification & digests | Full leaderboards, level unlocks, daily/weekly email digest | Planned |
+| 4. Gamification & digests | Daily/weekly email digest, per-type email settings, one-click unsubscribe, level-up notifications, custom level names | ✅ Done |
 | 5. Deployment | Hostinger guide, install script, CI deploy | Planned |
 
 ## Local setup
@@ -72,6 +72,16 @@ Webhook setup (use test keys first):
 | Razorpay | `APP_URL/webhooks/razorpay` | `subscription.activated`, `subscription.charged`, `subscription.pending`, `subscription.halted`, `subscription.cancelled`, `subscription.completed`, `payment.captured` |
 
 To test webhooks on your own computer, use `stripe listen --forward-to localhost:8000/webhooks/stripe`.
+
+
+## Emails and digests
+
+- **Digest:** members get a weekly summary by default (Monday 08:00): the most popular new posts in each of their communities and events coming up. They can switch to daily (08:00 every day) or off in Settings → Email. Times use the app timezone (`APP_TIMEZONE`). Nobody gets an empty digest, and a post is never sent twice.
+- **Activity emails** (comments, mentions, join requests, event reminders, level-ups) can each be turned off in Settings → Email. In-app notifications always arrive.
+- Every email has a signed unsubscribe link that works without logging in. Digests also send the `List-Unsubscribe` one-click header that Gmail and Yahoo require from bulk senders.
+- Members get a notification when likes push them to a new level, along with any courses it unlocks. Owners can name each level (Settings → Level names); the names show on the leaderboard and on locked courses.
+
+Send a digest by hand with `php artisan app:send-digests weekly`.
 
 ## Background jobs
 

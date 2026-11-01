@@ -1,6 +1,6 @@
 import { UserAvatar } from '@/components/community/user-avatar';
 import CommunityLayout from '@/layouts/community-layout';
-import { cn } from '@/lib/utils';
+import { cn, levelLabel } from '@/lib/utils';
 import { type Community, type PublicUser } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { Lock } from 'lucide-react';
@@ -28,7 +28,7 @@ export default function Leaderboards({ community, levels, me, boards }: Leaderbo
                             <div className="border-level text-level flex size-24 items-center justify-center rounded-full border-4 text-3xl font-bold">
                                 {me.level}
                             </div>
-                            <div className="mt-3 font-semibold">Level {me.level}</div>
+                            <div className="mt-3 font-semibold">{levelLabel(me.level, community.level_names)}</div>
                             <div className="text-muted-foreground text-sm">
                                 {me.points_to_next !== null ? `${me.points_to_next} points to level up` : 'Top level reached 🎉'}
                             </div>
@@ -51,7 +51,8 @@ export default function Leaderboards({ community, levels, me, boards }: Leaderbo
                                     {me && l.level > me.level ? <Lock className="size-3" /> : l.level}
                                 </span>
                                 <span className="flex-1">
-                                    Level {l.level} <span className="text-muted-foreground text-xs">({l.points} pts)</span>
+                                    {levelLabel(l.level, community.level_names)}{' '}
+                                    <span className="text-muted-foreground text-xs">({l.points} pts)</span>
                                 </span>
                                 <span className="text-muted-foreground text-xs">{l.percent}% of members</span>
                             </div>

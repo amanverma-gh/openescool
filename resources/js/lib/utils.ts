@@ -63,3 +63,8 @@ export function formatMoney(amount: number, currency: string): string {
 export function intervalLabel(interval: 'month' | 'year' | 'one_time'): string {
     return { month: '/month', year: '/year', one_time: ' once' }[interval];
 }
+
+export function levelLabel(level: number, names?: (string | null)[]): string {
+    const name = names?.[level - 1];
+    return name ? `Level ${level} · ${name}` : `Level ${level}`;
+}

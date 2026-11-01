@@ -6,6 +6,7 @@ use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\CommunitySettingsController;
+use App\Http\Controllers\EmailPreferencesController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\LeaderboardController;
@@ -28,6 +29,11 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::get('u/{user:username}', [UserProfileController::class, 'show'])->name('users.show');
+
+Route::middleware(['signed', 'throttle:20,1'])->group(function () {
+    Route::get('email/unsubscribe/{user}/{type}', [EmailPreferencesController::class, 'confirm'])->name('email.unsubscribe');
+    Route::post('email/unsubscribe/{user}/{type}', [EmailPreferencesController::class, 'unsubscribe']);
+});
 
 // Signature-verified; CSRF is skipped for webhooks/* in bootstrap/app.php.
 Route::post('webhooks/stripe', [WebhookController::class, 'stripe'])->name('webhooks.stripe');

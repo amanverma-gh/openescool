@@ -67,6 +67,7 @@ export interface Community extends CommunityLink {
     cover: string | null;
     privacy: 'public' | 'private';
     access_type: 'free' | 'paid';
+    level_names: (string | null)[];
     members_count: number;
     membership: {
         role: Role;

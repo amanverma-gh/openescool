@@ -15,6 +15,11 @@ class EventReminder extends CommunityActivity
         return $this->event->host;
     }
 
+    public function emailType(): ?string
+    {
+        return 'events';
+    }
+
     public function message(): string
     {
         $minutes = max(1, (int) round(now()->diffInMinutes($this->startsAt)));

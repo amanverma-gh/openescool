@@ -15,6 +15,11 @@ class NewComment extends CommunityActivity
         return $this->comment->author;
     }
 
+    public function emailType(): ?string
+    {
+        return 'comments';
+    }
+
     public function message(): string
     {
         $what = $this->isReply ? 'replied to your comment on' : 'commented on your post';

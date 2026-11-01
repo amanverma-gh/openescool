@@ -41,6 +41,7 @@ abstract class Controller
             'cover' => $community->cover,
             'privacy' => $community->privacy,
             'access_type' => $community->access_type,
+            'level_names' => $community->levelNames(),
             'members_count' => $community->members_count,
             'membership' => $membership ? [
                 'role' => $membership->role,

@@ -28,11 +28,21 @@ abstract class CommunityActivity extends Notification implements ShouldQueue
     }
 
     /**
+     * Key in User::EMAIL_TYPES that controls the email copy; null = always email.
+     */
+    public function emailType(): ?string
+    {
+        return null;
+    }
+
+    /**
      * @return list<string>
      */
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        $type = $this->emailType();
+
+        return $type === null || $notifiable->wantsEmail($type) ? ['database', 'mail'] : ['database'];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -46,7 +56,13 @@ abstract class CommunityActivity extends Notification implements ShouldQueue
             $mail->line('"'.$excerpt.'"');
         }
 
-        return $mail->action('View on '.config('app.name'), $this->url());
+        $mail->action('View on '.config('app.name'), $this->url());
+
+        if ($type = $this->emailType()) {
+            $mail->line('[Stop these emails]('.Unsubscribe::url($notifiable, $type).') · [Email settings]('.route('notifications.settings').')');
+        }
+
+        return $mail;
     }
 
     /**

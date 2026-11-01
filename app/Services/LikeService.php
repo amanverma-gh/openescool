@@ -3,9 +3,12 @@
 namespace App\Services;
 
 use App\Models\Comment;
+use App\Models\CommunityMember;
 use App\Models\PointEvent;
 use App\Models\Post;
 use App\Models\User;
+use App\Notifications\LevelUp;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class LikeService
@@ -19,7 +22,7 @@ class LikeService
     {
         $community = $likeable instanceof Post ? $likeable->community : $likeable->post->community;
 
-        return DB::transaction(function () use ($user, $likeable, $community) {
+        [$liked, $author] = DB::transaction(function () use ($user, $likeable, $community) {
             $existing = $likeable->likes()->where('user_id', $user->id)->first();
             $delta = $existing ? -1 : 1;
 
@@ -34,7 +37,16 @@ class LikeService
             $community->members()->where('user_id', $likeable->user_id)->increment('points', $delta);
             PointEvent::create(['community_id' => $community->id, 'user_id' => $likeable->user_id, 'points' => $delta]);
 
-            return ! $existing;
+            return [! $existing, $community->members()->where('user_id', $likeable->user_id)->first()];
         });
+
+        // Crossing a threshold upward: celebrate once (unliking and re-liking stays quiet).
+        if ($liked && $author && $author->user_id !== $user->id
+            && $author->level > CommunityMember::levelForPoints($author->points - 1)
+            && Cache::add("level-up:{$author->id}:{$author->level}", true, now()->addYear())) {
+            $author->user->notify(new LevelUp($community, $author->level));
+        }
+
+        return $liked;
     }
 }

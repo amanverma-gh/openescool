@@ -21,6 +21,11 @@ class MembershipUpdate extends CommunityActivity
         return $this->member->user;
     }
 
+    public function emailType(): ?string
+    {
+        return 'membership';
+    }
+
     public function message(): string
     {
         $community = $this->member->community->name;

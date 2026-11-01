@@ -52,6 +52,11 @@ class User extends Authenticatable
     protected $appends = ['avatar'];
 
     /**
+     * @var array<string, mixed>
+     */
+    protected $attributes = ['digest_frequency' => 'weekly'];
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -63,7 +68,35 @@ class User extends Authenticatable
             'last_seen_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'email_preferences' => 'array',
+            'last_digest_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Email types a member can switch off. In-app notifications always arrive.
+     */
+    public const EMAIL_TYPES = [
+        'comments' => 'Replies and comments on my posts',
+        'mentions' => 'When someone @mentions me',
+        'membership' => 'Join requests and approvals',
+        'events' => 'Event reminders',
+        'level_up' => 'When I level up',
+    ];
+
+    public const DIGEST_FREQUENCIES = ['daily', 'weekly', 'off'];
+
+    public function wantsEmail(string $type): bool
+    {
+        return (bool) ($this->email_preferences[$type] ?? true);
+    }
+
+    /**
+     * @return array<string, bool>
+     */
+    public function emailPreferences(): array
+    {
+        return collect(self::EMAIL_TYPES)->map(fn ($label, string $type) => $this->wantsEmail($type))->all();
     }
 
     protected static function booted(): void

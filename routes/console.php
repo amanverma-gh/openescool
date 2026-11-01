@@ -28,3 +28,6 @@ Schedule::command('queue:work --stop-when-empty --max-time=50')->everyMinute()->
 Schedule::command('queue:prune-failed --hours=168')->daily();
 Schedule::command('app:send-event-reminders')->everyFiveMinutes()->withoutOverlapping();
 Schedule::command('app:expire-subscriptions')->hourly()->withoutOverlapping();
+// Times are in the app timezone (APP_TIMEZONE / config/app.php).
+Schedule::command('app:send-digests daily')->dailyAt('08:00')->withoutOverlapping();
+Schedule::command('app:send-digests weekly')->weeklyOn(1, '08:00')->withoutOverlapping();

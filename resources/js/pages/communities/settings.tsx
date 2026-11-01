@@ -20,6 +20,7 @@ interface SettingsProps {
         privacy: 'public' | 'private';
         requires_approval: boolean;
         join_questions: string[];
+        level_names: (string | null)[];
     };
     categories: (Category & { posts_count: number; position: number })[];
 }
@@ -32,6 +33,7 @@ export default function Settings({ community, settings, categories }: SettingsPr
         privacy: settings.privacy,
         requires_approval: settings.requires_approval,
         join_questions: settings.join_questions,
+        level_names: settings.level_names.map((n) => n ?? ''),
         icon: null as File | null,
         cover: null as File | null,
     });
@@ -129,6 +131,33 @@ export default function Settings({ community, settings, categories }: SettingsPr
                                     <Plus /> Add question
                                 </Button>
                             )}
+                        </div>
+                    </Field>
+
+                    <Field label="Level names (optional)" error={form.errors.level_names}>
+                        <p className="text-muted-foreground -mt-1 text-xs">
+                            Give each level a name, like "Rookie" or "Legend". It shows on the leaderboard.
+                        </p>
+                        <div className="grid gap-2 sm:grid-cols-3">
+                            {form.data.level_names.map((name, i) => (
+                                <div key={i} className="flex items-center gap-2">
+                                    <span className="bg-level flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white">
+                                        {i + 1}
+                                    </span>
+                                    <Input
+                                        value={name}
+                                        placeholder={`Level ${i + 1}`}
+                                        maxLength={30}
+                                        aria-label={`Name for level ${i + 1}`}
+                                        onChange={(e) =>
+                                            form.setData(
+                                                'level_names',
+                                                form.data.level_names.map((x, j) => (j === i ? e.target.value : x)),
+                                            )
+                                        }
+                                    />
+                                </div>
+                            ))}
                         </div>
                     </Field>
 

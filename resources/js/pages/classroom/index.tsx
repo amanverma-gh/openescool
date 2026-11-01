@@ -2,7 +2,7 @@ import { CourseForm } from '@/components/classroom/course-form';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import CommunityLayout from '@/layouts/community-layout';
-import { cn, plural } from '@/lib/utils';
+import { cn, levelLabel, plural } from '@/lib/utils';
 import { type Community, type CourseCard } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { BookOpen, Lock, Plus } from 'lucide-react';
@@ -68,7 +68,7 @@ function CourseTile({ community, course }: { community: Community; course: Cours
                 {locked && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-sm font-medium">
                         <Lock className="size-6" />
-                        {course.access === 'level' ? `Unlock at Level ${course.unlock_level}` : 'Members only'}
+                        {course.access === 'level' ? `Unlock at ${levelLabel(course.unlock_level ?? 1, community.level_names)}` : 'Members only'}
                     </div>
                 )}
                 {!course.is_published && (

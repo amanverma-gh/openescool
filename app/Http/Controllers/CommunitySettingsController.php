@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Community;
+use App\Models\CommunityMember;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -22,6 +23,7 @@ class CommunitySettingsController extends Controller
             'community' => $this->communityProps($community),
             'settings' => $community->only(['name', 'tagline', 'about', 'privacy', 'requires_approval']) + [
                 'join_questions' => $community->join_questions ?? [],
+                'level_names' => $community->levelNames(),
             ],
             'categories' => $community->categories()->withCount('posts')->get(),
         ]);
@@ -39,6 +41,8 @@ class CommunitySettingsController extends Controller
             'requires_approval' => ['boolean'],
             'join_questions' => ['array', 'max:3'],
             'join_questions.*' => ['string', 'max:200'],
+            'level_names' => ['array', 'size:'.count(CommunityMember::LEVEL_THRESHOLDS)],
+            'level_names.*' => ['nullable', 'string', 'max:30'],
             'icon' => ['nullable', 'image', 'max:2048'],
             'cover' => ['nullable', 'image', 'max:5120'],
         ]);
@@ -54,6 +58,11 @@ class CommunitySettingsController extends Controller
         }
 
         $data['join_questions'] = array_values(array_filter($data['join_questions'] ?? []));
+
+        if (array_key_exists('level_names', $data)) {
+            $names = array_map(fn ($name) => filled($name) ? trim($name) : null, $data['level_names']);
+            $data['level_names'] = array_filter($names) ? $names : null;
+        }
         $community->fill($data)->save();
 
         return back()->with('success', 'Settings saved.');

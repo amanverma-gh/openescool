@@ -52,7 +52,7 @@ class ClassroomController extends Controller
 
         if (! $course->isUnlockedFor($member)) {
             $reason = $course->access === Course::ACCESS_LEVEL && $member?->isActive()
-                ? "Reach level {$course->unlock_level} to unlock this course."
+                ? 'Reach '.$community->levelLabel((int) $course->unlock_level).' to unlock this course.'
                 : 'Join the community to access this course.';
 
             return to_route('classroom.index', $community)->with('error', $reason);

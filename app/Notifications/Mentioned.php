@@ -16,6 +16,11 @@ class Mentioned extends CommunityActivity
         return $this->by;
     }
 
+    public function emailType(): ?string
+    {
+        return 'mentions';
+    }
+
     public function message(): string
     {
         return "{$this->by->name} mentioned you in \"{$this->post->title}\"";
