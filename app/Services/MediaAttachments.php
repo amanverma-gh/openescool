@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\AppSetting;
 use App\Models\Community;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -44,7 +45,7 @@ class MediaAttachments
             throw ValidationException::withMessages([$fileField => $max === 1 ? 'You can attach one photo or GIF.' : "You can attach up to {$max} items."]);
         }
 
-        $kb = (int) $community->max_upload_kb;
+        $kb = AppSetting::maxUploadKb();
         $request->validate([
             'gif_id' => ['nullable', 'string', 'regex:/^[A-Za-z0-9]{5,40}$/'],
             ...collect($files)->keys()->mapWithKeys(fn ($i) => [

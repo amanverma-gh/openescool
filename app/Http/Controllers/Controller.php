@@ -49,8 +49,8 @@ abstract class Controller
                 // GIFs need the platform GIPHY key as well as the community switch.
                 'gifs' => $community->allow_gifs && filled(AppSetting::get('giphy_api_key')),
                 'comments' => (bool) $community->allow_comment_media,
-                'max_images' => (int) $community->max_images,
-                'max_kb' => (int) $community->max_upload_kb,
+                'max_images' => AppSetting::maxImages(),
+                'max_kb' => AppSetting::maxUploadKb(),
             ],
             'membership' => $membership ? [
                 'role' => $membership->role,

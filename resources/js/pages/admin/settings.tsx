@@ -14,9 +14,10 @@ interface SecretState {
 interface AdminSettingsProps {
     giphy: SecretState;
     brevo: SecretState & { from_address: string | null; from_name: string | null; list_id: string | null; mailer: string };
+    photos: { max_images: number; max_upload_mb: number };
 }
 
-export default function AdminSettings({ giphy, brevo }: AdminSettingsProps) {
+export default function AdminSettings({ giphy, brevo, photos }: AdminSettingsProps) {
     return (
         <AppLayout>
             <Head title="Admin settings" />
@@ -32,9 +33,73 @@ export default function AdminSettings({ giphy, brevo }: AdminSettingsProps) {
                 </div>
 
                 <BrevoSection brevo={brevo} />
+                <PhotosSection photos={photos} />
                 <GiphySection giphy={giphy} />
             </div>
         </AppLayout>
+    );
+}
+
+function PhotosSection({ photos }: { photos: AdminSettingsProps['photos'] }) {
+    const form = useForm({ max_images: photos.max_images, max_upload_mb: String(photos.max_upload_mb) });
+
+    const submit: FormEventHandler = (e) => {
+        e.preventDefault();
+        form.post(route('admin.settings.update'), { preserveScroll: true });
+    };
+
+    return (
+        <section className="bg-card space-y-4 rounded-xl border p-6 shadow-xs">
+            <div>
+                <h2 className="text-lg font-semibold">Photo limits</h2>
+                <p className="text-muted-foreground mt-1 text-sm">
+                    Applies to every community that allows photos. Each community owner still decides whether to allow photos and GIFs.
+                </p>
+            </div>
+
+            <form onSubmit={submit} className="space-y-3">
+                <div className="flex flex-wrap gap-4">
+                    <div className="space-y-1">
+                        <label htmlFor="max_images" className="text-sm font-medium">
+                            Photos and GIFs per post
+                        </label>
+                        <select
+                            id="max_images"
+                            value={form.data.max_images}
+                            onChange={(e) => form.setData('max_images', Number(e.target.value))}
+                            className="border-input bg-background block h-9 w-28 rounded-md border px-2 text-sm"
+                        >
+                            {[1, 2, 3, 4].map((n) => (
+                                <option key={n} value={n}>
+                                    {n}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="space-y-1">
+                        <label htmlFor="max_upload_mb" className="text-sm font-medium">
+                            Max photo size (MB)
+                        </label>
+                        <Input
+                            id="max_upload_mb"
+                            type="number"
+                            min={0.1}
+                            max={1}
+                            step={0.1}
+                            value={form.data.max_upload_mb}
+                            onChange={(e) => form.setData('max_upload_mb', e.target.value)}
+                            className="w-28"
+                        />
+                    </div>
+                </div>
+                <p className="text-muted-foreground text-xs">1 MB at most. You can set a lower limit, e.g. 0.5.</p>
+                <InputError message={form.errors.max_images ?? form.errors.max_upload_mb} />
+                <Button disabled={form.processing}>
+                    {form.processing && <LoaderCircle className="size-4 animate-spin" />}
+                    Save
+                </Button>
+            </form>
+        </section>
     );
 }
 

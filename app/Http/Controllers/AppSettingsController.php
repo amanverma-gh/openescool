@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AppSetting;
+use App\Models\Post;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -29,6 +30,10 @@ class AppSettingsController extends Controller
                 // Mail still goes to the log file until a key is saved (or MAIL_MAILER is set).
                 'mailer' => config('mail.default'),
             ],
+            'photos' => [
+                'max_images' => AppSetting::maxImages(),
+                'max_upload_mb' => round(AppSetting::maxUploadKb() / 1024, 2),
+            ],
         ]);
     }
 
@@ -43,7 +48,21 @@ class AppSettingsController extends Controller
             'mail_from_address' => ['sometimes', 'required', 'email', 'max:200'],
             'mail_from_name' => ['sometimes', 'required', 'string', 'max:100'],
             'brevo_members_list_id' => ['nullable', 'integer', 'min:1'],
+            'max_images' => ['sometimes', 'integer', 'between:1,'.Post::MAX_ATTACHMENTS],
+            // In MB, e.g. 0.5. Never above 1 MB.
+            'max_upload_mb' => ['sometimes', 'numeric', 'min:0.1', 'max:'.AppSetting::MAX_UPLOAD_KB / 1024],
+        ], [
+            'max_upload_mb.max' => 'Max photo size can be 1 MB at most. You can set a lower limit, e.g. 0.5.',
+            'max_upload_mb.min' => 'Max photo size must be at least 0.1 MB.',
+            'max_images.between' => 'Choose 1 to '.Post::MAX_ATTACHMENTS.' photos per post.',
         ]);
+
+        if (array_key_exists('max_images', $data)) {
+            AppSetting::put('max_images', (string) $data['max_images']);
+        }
+        if (array_key_exists('max_upload_mb', $data)) {
+            AppSetting::put('max_upload_kb', (string) (int) round($data['max_upload_mb'] * 1024));
+        }
 
         if (isset($data['remove'])) {
             AppSetting::put($data['remove'], null);

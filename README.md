@@ -96,9 +96,10 @@ Send a digest by hand with `php artisan app:send-digests weekly`.
 
 ## Photos and GIFs
 
-Each community owner decides in **Settings → Photos and GIFs**. Everything is off by default.
+Each community owner turns photos, GIFs and comment media on in **Settings → Photos and GIFs**. Everything is off by default.
 
-- **Photos in posts:** JPG, PNG or WebP. The owner picks how many per post (1–4) and the max size (default 1 MB; any value from 0.1 to 5 MB, e.g. 0.5). Every upload is checked to be a real image.
+- **Photos in posts:** JPG, PNG or WebP. Every upload is checked to be a real image.
+- **Limits (whole platform):** a platform admin sets photos and GIFs per post (1–4) and the max photo size in **Admin settings → Photo limits**. The size is 1 MB by default and can never be more than 1 MB; it can be lower, e.g. 0.5. A bigger file gets an error.
 - **GIFs:** picked from GIPHY with search and trending, like WhatsApp. Results are rated PG-13 or lower, and there is one GIF per post. GIFs load from GIPHY, so they use no storage.
 - **Comments:** a separate switch allows one photo or one GIF per comment.
 - **GIPHY key:** a platform admin adds it in the app under **Admin settings** (user menu). It is checked with GIPHY, stored encrypted with `APP_KEY`, and never sent to the browser; searches go through the server. Get a free key at [developers.giphy.com](https://developers.giphy.com/dashboard/).

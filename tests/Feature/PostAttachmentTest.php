@@ -82,9 +82,12 @@ class PostAttachmentTest extends TestCase
         Storage::disk('public')->assertExists($post->attachments);
     }
 
-    public function test_owner_sets_how_many_items_and_how_big(): void
+    public function test_platform_admin_sets_how_many_items_and_how_big(): void
     {
-        $this->community->update(['allow_images' => true, 'max_images' => 1, 'max_upload_kb' => 512]);
+        $this->community->update(['allow_images' => true]);
+        $this->actingAs($this->owner)->post(route('admin.settings.update'), ['max_images' => 1, 'max_upload_mb' => 0.5])->assertSessionHasNoErrors();
+        $this->assertSame(1, AppSetting::maxImages());
+        $this->assertSame(512, AppSetting::maxUploadKb());
 
         $this->postWith(['attachments' => [$this->image('a.png'), $this->image('b.png')]])->assertSessionHasErrors('attachments');
         $this->postWith(['attachments' => [$this->image('big.png', 600)]])->assertSessionHasErrors('attachments.0');
@@ -92,22 +95,32 @@ class PostAttachmentTest extends TestCase
         $this->assertSame(1, Post::count());
     }
 
-    public function test_settings_page_saves_limits_in_mb(): void
+    public function test_photo_size_limit_cannot_go_above_one_mb(): void
+    {
+        $this->assertSame(4, AppSetting::maxImages());
+        $this->assertSame(1024, AppSetting::maxUploadKb()); // default 1 MB
+
+        $this->actingAs($this->owner)->post(route('admin.settings.update'), ['max_images' => 5, 'max_upload_mb' => 1.5])
+            ->assertSessionHasErrors(['max_images', 'max_upload_mb']);
+        $this->assertSame(1024, AppSetting::maxUploadKb());
+
+        $this->community->update(['allow_images' => true]);
+        $this->postWith(['attachments' => [$this->image('big.png', 1100)]])->assertSessionHasErrors('attachments.0');
+
+        // Only platform admins can change the limits.
+        $this->actingAs($this->member)->post(route('admin.settings.update'), ['max_upload_mb' => 0.2])->assertForbidden();
+    }
+
+    public function test_community_settings_save_media_switches(): void
     {
         $this->actingAs($this->owner)->post(route('communities.settings.update', $this->community), [
             'name' => 'Test', 'privacy' => 'public',
             'allow_images' => true, 'allow_gifs' => true, 'allow_comment_media' => true,
-            'max_images' => 2, 'max_upload_mb' => 0.5,
         ])->assertSessionHasNoErrors();
 
         $this->community->refresh();
-        $this->assertSame(2, $this->community->max_images);
-        $this->assertSame(512, $this->community->max_upload_kb);
+        $this->assertTrue($this->community->allow_images);
         $this->assertTrue($this->community->allow_comment_media);
-
-        $this->actingAs($this->owner)->post(route('communities.settings.update', $this->community), [
-            'name' => 'Test', 'privacy' => 'public', 'max_images' => 5, 'max_upload_mb' => 50,
-        ])->assertSessionHasErrors(['max_images', 'max_upload_mb']);
     }
 
     public function test_gif_files_are_no_longer_uploaded_but_giphy_gifs_work(): void

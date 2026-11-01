@@ -6,7 +6,6 @@ use App\Models\AppSetting;
 use App\Models\Category;
 use App\Models\Community;
 use App\Models\CommunityMember;
-use App\Models\Post;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -23,14 +22,15 @@ class CommunitySettingsController extends Controller
 
         return Inertia::render('communities/settings', [
             'community' => $this->communityProps($community),
-            'settings' => $community->only(['name', 'tagline', 'about', 'privacy', 'requires_approval', 'allow_images', 'allow_gifs', 'allow_comment_media', 'max_images']) + [
-                'max_upload_mb' => round($community->max_upload_kb / 1024, 1),
+            'settings' => $community->only(['name', 'tagline', 'about', 'privacy', 'requires_approval', 'allow_images', 'allow_gifs', 'allow_comment_media']) + [
                 'join_questions' => $community->join_questions ?? [],
                 'level_names' => $community->levelNames(),
             ],
             'categories' => $community->categories()->withCount('posts')->get(),
             'media' => $community->media()->get()->map->toPublicArray(),
             'giphyReady' => filled(AppSetting::get('giphy_api_key')),
+            // Set platform-wide in Admin settings; shown here so owners know the limits.
+            'photoLimits' => ['max_images' => AppSetting::maxImages(), 'max_kb' => AppSetting::maxUploadKb()],
         ]);
     }
 
@@ -47,9 +47,6 @@ class CommunitySettingsController extends Controller
             'allow_images' => ['boolean'],
             'allow_gifs' => ['boolean'],
             'allow_comment_media' => ['boolean'],
-            'max_images' => ['integer', 'between:1,'.Post::MAX_ATTACHMENTS],
-            // Admins pick the photo size limit in MB, e.g. 0.5 or 1.
-            'max_upload_mb' => ['numeric', 'between:0.1,5'],
             'join_questions' => ['array', 'max:3'],
             'join_questions.*' => ['string', 'max:200'],
             'level_names' => ['array', 'size:'.count(CommunityMember::LEVEL_THRESHOLDS)],
@@ -66,11 +63,6 @@ class CommunitySettingsController extends Controller
                 $community->{$field.'_path'} = $request->file($field)->store("communities/{$community->id}", 'public');
             }
             unset($data[$field]);
-        }
-
-        if (array_key_exists('max_upload_mb', $data)) {
-            $data['max_upload_kb'] = (int) round($data['max_upload_mb'] * 1024);
-            unset($data['max_upload_mb']);
         }
 
         $data['join_questions'] = array_values(array_filter($data['join_questions'] ?? []));

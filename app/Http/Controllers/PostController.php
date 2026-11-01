@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\CommentResource;
 use App\Http\Resources\PostResource;
 use App\Jobs\BroadcastPost;
+use App\Models\AppSetting;
 use App\Models\Comment;
 use App\Models\Community;
 use App\Models\Post;
@@ -163,7 +164,7 @@ class PostController extends Controller
     protected function storeUploads(Request $request, Community $community, array $existing): ?array
     {
         return app(MediaAttachments::class)->collect(
-            $request, $community, $existing, (int) $community->max_images, 'attachments', "posts/{$community->id}",
+            $request, $community, $existing, AppSetting::maxImages(), 'attachments', "posts/{$community->id}",
         ) ?: null;
     }
 
