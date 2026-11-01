@@ -98,7 +98,7 @@ class CommentController extends Controller
             return $current;
         }
 
-        if (! $community->allow_comment_media) {
+        if (! $community->allow_comment_media && ! $community->membershipFor($request->user())?->canModerate()) {
             throw ValidationException::withMessages(['image' => 'Photos and GIFs are turned off for comments here.']);
         }
 

@@ -33,10 +33,13 @@ class MediaAttachments
         $files = is_array($raw) ? array_values(array_filter($raw)) : ($raw ? [$raw] : []);
         $gif = $request->input('gif_id');
 
-        if ($files && ! $community->allow_images) {
+        // The team (owner, admins, moderators) can always add media; the switches are for members.
+        $team = (bool) $community->membershipFor($request->user())?->canModerate();
+
+        if ($files && ! $community->allow_images && ! $team) {
             throw ValidationException::withMessages([$fileField => 'This community does not allow photos.']);
         }
-        if (filled($gif) && ! $community->allow_gifs) {
+        if (filled($gif) && ! $community->allow_gifs && ! $team) {
             throw ValidationException::withMessages(['gif_id' => 'This community does not allow GIFs.']);
         }
 

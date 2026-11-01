@@ -32,6 +32,7 @@ abstract class Controller
     {
         $user = request()->user();
         $membership = $community->membershipFor($user);
+        $team = (bool) $membership?->canModerate();
 
         return [
             'id' => $community->id,
@@ -45,12 +46,15 @@ abstract class Controller
             'level_names' => $community->levelNames(),
             'members_count' => $community->members_count,
             'media' => [
-                'images' => (bool) $community->allow_images,
-                // GIFs need the platform GIPHY key as well as the community switch.
-                'gifs' => $community->allow_gifs && filled(AppSetting::get('giphy_api_key')),
-                'comments' => (bool) $community->allow_comment_media,
+                // The team can always add media; the community switches apply to members.
+                'images' => $community->allow_images || $team,
+                // GIFs also need the platform GIPHY key.
+                'gifs' => ($community->allow_gifs || $team) && filled(AppSetting::get('giphy_api_key')),
+                'comments' => $community->allow_comment_media || $team,
                 'max_images' => AppSetting::maxImages(),
                 'max_kb' => AppSetting::maxUploadKb(),
+                'resource_kb' => AppSetting::uploadLimitKb('max_resource_kb'),
+                'video_kb' => AppSetting::uploadLimitKb('max_video_kb'),
             ],
             'membership' => $membership ? [
                 'role' => $membership->role,

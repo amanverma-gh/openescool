@@ -14,10 +14,19 @@ interface SecretState {
 interface AdminSettingsProps {
     giphy: SecretState;
     brevo: SecretState & { from_address: string | null; from_name: string | null; list_id: string | null; mailer: string };
-    photos: { max_images: number; max_upload_mb: number };
+    uploads: UploadLimits;
+    uploadCeilings: Omit<UploadLimits, 'max_images'>;
+    serverMaxMb: number;
 }
 
-export default function AdminSettings({ giphy, brevo, photos }: AdminSettingsProps) {
+interface UploadLimits {
+    max_images: number;
+    max_upload_mb: number;
+    max_resource_mb: number;
+    max_video_mb: number;
+}
+
+export default function AdminSettings({ giphy, brevo, uploads, uploadCeilings, serverMaxMb }: AdminSettingsProps) {
     return (
         <AppLayout>
             <Head title="Admin settings" />
@@ -33,32 +42,54 @@ export default function AdminSettings({ giphy, brevo, photos }: AdminSettingsPro
                 </div>
 
                 <BrevoSection brevo={brevo} />
-                <PhotosSection photos={photos} />
+                <UploadsSection uploads={uploads} ceilings={uploadCeilings} serverMaxMb={serverMaxMb} />
                 <GiphySection giphy={giphy} />
             </div>
         </AppLayout>
     );
 }
 
-function PhotosSection({ photos }: { photos: AdminSettingsProps['photos'] }) {
-    const form = useForm({ max_images: photos.max_images, max_upload_mb: String(photos.max_upload_mb) });
+const SIZE_FIELDS = [
+    { key: 'max_upload_mb', label: 'Max photo size (MB)', hint: 'Photos in posts and comments' },
+    { key: 'max_resource_mb', label: 'Max resource file (MB)', hint: 'PDFs, docs, ZIPs in lessons' },
+    { key: 'max_video_mb', label: 'Max video size (MB)', hint: 'MP4 or WebM in lessons' },
+] as const;
+
+function UploadsSection({
+    uploads,
+    ceilings,
+    serverMaxMb,
+}: {
+    uploads: UploadLimits;
+    ceilings: AdminSettingsProps['uploadCeilings'];
+    serverMaxMb: number;
+}) {
+    const form = useForm({
+        max_images: uploads.max_images,
+        max_upload_mb: String(uploads.max_upload_mb),
+        max_resource_mb: String(uploads.max_resource_mb),
+        max_video_mb: String(uploads.max_video_mb),
+    });
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
         form.post(route('admin.settings.update'), { preserveScroll: true });
     };
 
+    const tooBigForServer = SIZE_FIELDS.some((f) => Number(uploads[f.key]) > serverMaxMb);
+
     return (
         <section className="bg-card space-y-4 rounded-xl border p-6 shadow-xs">
             <div>
-                <h2 className="text-lg font-semibold">Photo limits</h2>
+                <h2 className="text-lg font-semibold">Upload limits</h2>
                 <p className="text-muted-foreground mt-1 text-sm">
-                    Applies to every community that allows photos. Each community owner still decides whether to allow photos and GIFs.
+                    Applies to every community. Each starts at 1 MB; you can lower it (e.g. 0.5) or raise it up to the maximum shown. A bigger file
+                    gets an error. Community owners still decide whether members can add photos.
                 </p>
             </div>
 
             <form onSubmit={submit} className="space-y-3">
-                <div className="flex flex-wrap gap-4">
+                <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-1">
                         <label htmlFor="max_images" className="text-sm font-medium">
                             Photos and GIFs per post
@@ -76,24 +107,35 @@ function PhotosSection({ photos }: { photos: AdminSettingsProps['photos'] }) {
                             ))}
                         </select>
                     </div>
-                    <div className="space-y-1">
-                        <label htmlFor="max_upload_mb" className="text-sm font-medium">
-                            Max photo size (MB)
-                        </label>
-                        <Input
-                            id="max_upload_mb"
-                            type="number"
-                            min={0.1}
-                            max={1}
-                            step={0.1}
-                            value={form.data.max_upload_mb}
-                            onChange={(e) => form.setData('max_upload_mb', e.target.value)}
-                            className="w-28"
-                        />
-                    </div>
+                    {SIZE_FIELDS.map((field) => (
+                        <div key={field.key} className="space-y-1">
+                            <label htmlFor={field.key} className="text-sm font-medium">
+                                {field.label}
+                            </label>
+                            <Input
+                                id={field.key}
+                                type="number"
+                                min={0.1}
+                                max={ceilings[field.key]}
+                                step={0.1}
+                                value={form.data[field.key]}
+                                onChange={(e) => form.setData(field.key, e.target.value)}
+                                className="w-28"
+                            />
+                            <p className="text-muted-foreground text-xs">
+                                {field.hint}. Up to {ceilings[field.key]} MB.
+                            </p>
+                            <InputError message={form.errors[field.key]} />
+                        </div>
+                    ))}
                 </div>
-                <p className="text-muted-foreground text-xs">1 MB at most. You can set a lower limit, e.g. 0.5.</p>
-                <InputError message={form.errors.max_images ?? form.errors.max_upload_mb} />
+                <InputError message={form.errors.max_images} />
+                {tooBigForServer && (
+                    <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:bg-amber-950 dark:text-amber-100">
+                        This server only accepts uploads up to {serverMaxMb} MB. Raise <code>upload_max_filesize</code> and <code>post_max_size</code>{' '}
+                        in php.ini, or bigger files will fail.
+                    </p>
+                )}
                 <Button disabled={form.processing}>
                     {form.processing && <LoaderCircle className="size-4 animate-spin" />}
                     Save

@@ -6,10 +6,22 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import CommunityLayout from '@/layouts/community-layout';
-import { cn } from '@/lib/utils';
+import { cn, formatFileSize } from '@/lib/utils';
 import { type Community, type CourseCard, type CourseModule, type Lesson } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, Circle, ExternalLink, MoreHorizontal, Pencil, Plus, Settings } from 'lucide-react';
+import {
+    ArrowLeft,
+    CheckCircle2,
+    ChevronLeft,
+    ChevronRight,
+    Circle,
+    Download,
+    ExternalLink,
+    MoreHorizontal,
+    Pencil,
+    Plus,
+    Settings,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface ShowProps {
@@ -163,7 +175,16 @@ export default function Show({ community, course, modules, lesson, canEdit }: Sh
                                 )}
                             </div>
 
-                            {video ? (
+                            {lesson.video_file_url ? (
+                                <video
+                                    key={lesson.video_file_url}
+                                    src={lesson.video_file_url}
+                                    controls
+                                    preload="metadata"
+                                    controlsList="nodownload"
+                                    className="mb-6 aspect-video w-full rounded-lg bg-black"
+                                />
+                            ) : video ? (
                                 <div className="mb-6">
                                     <VideoEmbed src={video} title={lesson.title} />
                                 </div>
@@ -188,14 +209,27 @@ export default function Show({ community, course, modules, lesson, canEdit }: Sh
                                     <ul className="space-y-1.5">
                                         {lesson.resources.map((r, i) => (
                                             <li key={i}>
-                                                <a
-                                                    href={r.url}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer nofollow"
-                                                    className="text-brand inline-flex items-center gap-1.5 text-sm hover:underline"
-                                                >
-                                                    <ExternalLink className="size-3.5" /> {r.label}
-                                                </a>
+                                                {r.path ? (
+                                                    <a
+                                                        href={r.url}
+                                                        download
+                                                        className="text-brand inline-flex items-center gap-1.5 text-sm hover:underline"
+                                                    >
+                                                        <Download className="size-3.5" /> {r.label}
+                                                        {r.size ? (
+                                                            <span className="text-muted-foreground text-xs">({formatFileSize(r.size)})</span>
+                                                        ) : null}
+                                                    </a>
+                                                ) : (
+                                                    <a
+                                                        href={r.url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer nofollow"
+                                                        className="text-brand inline-flex items-center gap-1.5 text-sm hover:underline"
+                                                    >
+                                                        <ExternalLink className="size-3.5" /> {r.label}
+                                                    </a>
+                                                )}
                                             </li>
                                         ))}
                                     </ul>

@@ -23,8 +23,15 @@ class AppSetting extends Model
 
     public const SECRETS = ['giphy_api_key', 'brevo_api_key'];
 
-    /** Hard ceiling for a photo upload; admins can only lower it. */
-    public const MAX_UPLOAD_KB = 1024;
+    /**
+     * Upload size limits a platform admin sets in Admin settings, in KB:
+     * key => [default, highest allowed]. Everything starts at 1 MB.
+     */
+    public const UPLOAD_LIMITS = [
+        'max_upload_kb' => [1024, 1024],        // photos in posts and comments
+        'max_resource_kb' => [1024, 100 * 1024], // lesson resource files
+        'max_video_kb' => [1024, 100 * 1024],    // lesson videos
+    ];
 
     /**
      * Photos and GIFs allowed on one post, set by a platform admin (1–4).
@@ -34,12 +41,19 @@ class AppSetting extends Model
         return max(1, min(Post::MAX_ATTACHMENTS, (int) static::get('max_images', (string) Post::MAX_ATTACHMENTS)));
     }
 
+    public static function uploadLimitKb(string $key): int
+    {
+        [$default, $ceiling] = self::UPLOAD_LIMITS[$key];
+
+        return max(100, min($ceiling, (int) static::get($key, (string) $default)));
+    }
+
     /**
-     * Largest photo upload in KB, set by a platform admin (never above 1 MB).
+     * Largest photo upload in KB (never above 1 MB).
      */
     public static function maxUploadKb(): int
     {
-        return max(100, min(self::MAX_UPLOAD_KB, (int) static::get('max_upload_kb', (string) self::MAX_UPLOAD_KB)));
+        return self::uploadLimitKb('max_upload_kb');
     }
 
     public static function get(string $key, ?string $default = null): ?string

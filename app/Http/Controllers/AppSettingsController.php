@@ -30,10 +30,14 @@ class AppSettingsController extends Controller
                 // Mail still goes to the log file until a key is saved (or MAIL_MAILER is set).
                 'mailer' => config('mail.default'),
             ],
-            'photos' => [
-                'max_images' => AppSetting::maxImages(),
-                'max_upload_mb' => round(AppSetting::maxUploadKb() / 1024, 2),
-            ],
+            'uploads' => ['max_images' => AppSetting::maxImages()] + collect(AppSetting::UPLOAD_LIMITS)
+                ->mapWithKeys(fn ($limits, $key) => [
+                    str_replace('_kb', '_mb', $key) => round(AppSetting::uploadLimitKb($key) / 1024, 2),
+                ])->all(),
+            'uploadCeilings' => collect(AppSetting::UPLOAD_LIMITS)
+                ->mapWithKeys(fn ($limits, $key) => [str_replace('_kb', '_mb', $key) => $limits[1] / 1024])->all(),
+            // What this server's PHP accepts; uploads above it fail before Laravel sees them.
+            'serverMaxMb' => round(min($this->iniBytes('upload_max_filesize'), $this->iniBytes('post_max_size')) / 1024 / 1024, 1),
         ]);
     }
 
@@ -49,19 +53,26 @@ class AppSettingsController extends Controller
             'mail_from_name' => ['sometimes', 'required', 'string', 'max:100'],
             'brevo_members_list_id' => ['nullable', 'integer', 'min:1'],
             'max_images' => ['sometimes', 'integer', 'between:1,'.Post::MAX_ATTACHMENTS],
-            // In MB, e.g. 0.5. Never above 1 MB.
-            'max_upload_mb' => ['sometimes', 'numeric', 'min:0.1', 'max:'.AppSetting::MAX_UPLOAD_KB / 1024],
+            // Sizes in MB, e.g. 0.5; each has its own ceiling.
+            'max_upload_mb' => ['sometimes', 'numeric', 'min:0.1', 'max:'.AppSetting::UPLOAD_LIMITS['max_upload_kb'][1] / 1024],
+            'max_resource_mb' => ['sometimes', 'numeric', 'min:0.1', 'max:'.AppSetting::UPLOAD_LIMITS['max_resource_kb'][1] / 1024],
+            'max_video_mb' => ['sometimes', 'numeric', 'min:0.1', 'max:'.AppSetting::UPLOAD_LIMITS['max_video_kb'][1] / 1024],
         ], [
             'max_upload_mb.max' => 'Max photo size can be 1 MB at most. You can set a lower limit, e.g. 0.5.',
-            'max_upload_mb.min' => 'Max photo size must be at least 0.1 MB.',
+            'max_resource_mb.max' => 'Max resource file size can be 100 MB at most.',
+            'max_video_mb.max' => 'Max video size can be 100 MB at most.',
+            '*.min' => 'Upload sizes must be at least 0.1 MB.',
             'max_images.between' => 'Choose 1 to '.Post::MAX_ATTACHMENTS.' photos per post.',
         ]);
 
         if (array_key_exists('max_images', $data)) {
             AppSetting::put('max_images', (string) $data['max_images']);
         }
-        if (array_key_exists('max_upload_mb', $data)) {
-            AppSetting::put('max_upload_kb', (string) (int) round($data['max_upload_mb'] * 1024));
+        foreach (array_keys(AppSetting::UPLOAD_LIMITS) as $key) {
+            $field = str_replace('_kb', '_mb', $key);
+            if (array_key_exists($field, $data)) {
+                AppSetting::put($key, (string) (int) round($data[$field] * 1024));
+            }
         }
 
         if (isset($data['remove'])) {
@@ -125,6 +136,22 @@ class AppSettingsController extends Controller
 
         // Only a hint of a saved key is ever shown.
         return ['set' => (bool) $value, 'hint' => $value ? '••••'.substr($value, -4) : null];
+    }
+
+    /**
+     * php.ini sizes like "2M" or "8G" in bytes.
+     */
+    protected function iniBytes(string $option): int
+    {
+        $value = trim((string) ini_get($option));
+        $number = (int) $value;
+
+        return match (strtoupper(substr($value, -1))) {
+            'G' => $number * 1024 ** 3,
+            'M' => $number * 1024 ** 2,
+            'K' => $number * 1024,
+            default => $number ?: PHP_INT_MAX,
+        };
     }
 
     protected function ensureAdmin(Request $request): void

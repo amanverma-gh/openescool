@@ -72,7 +72,7 @@ export interface Community extends CommunityLink {
     access_type: 'free' | 'paid';
     level_names: (string | null)[];
     members_count: number;
-    media: { images: boolean; gifs: boolean; comments: boolean; max_images: number; max_kb: number };
+    media: { images: boolean; gifs: boolean; comments: boolean; max_images: number; max_kb: number; resource_kb: number; video_kb: number };
     membership: {
         role: Role;
         status: 'active' | 'pending' | 'banned' | 'expired';
@@ -151,7 +151,12 @@ export interface CourseCard {
 
 export interface LessonResource {
     label: string;
+    /** A link, or the download URL of an uploaded file. */
     url: string;
+    /** Set for uploaded files (kept when the lesson is saved again). */
+    path?: string;
+    name?: string | null;
+    size?: number | null;
 }
 
 export interface CourseModule {
@@ -165,6 +170,7 @@ export interface Lesson {
     title: string;
     body: string | null;
     video_url: string | null;
+    video_file_url: string | null;
     resources: LessonResource[] | null;
     is_published: boolean;
     course_module_id: number;

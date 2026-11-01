@@ -89,6 +89,15 @@ To test webhooks on your own computer, use `stripe listen --forward-to localhost
 
 Send a digest by hand with `php artisan app:send-digests weekly`.
 
+## Classroom files
+
+- Lesson **resources** can be links or uploaded files (PDF, Word, Excel, PowerPoint, TXT, CSV, ZIP, images, MP3). Lessons can have an uploaded **video** (MP4 or WebM) instead of a YouTube/Vimeo/Loom link.
+- Uploaded files are stored privately (`storage/app/private`) and only served to people who can open the lesson. Removing a file from a lesson, or deleting the lesson, deletes it.
+
+## Team
+
+In **Settings → Team**, search a member and click **Make moderator** (or **Make admin**, owner only). Change or remove a role there, or with the role dropdown on the Members page.
+
 ## Search and chat
 
 - **Search:** the search box in a community's top bar finds posts (title and text) and members (name and username).
@@ -99,7 +108,9 @@ Send a digest by hand with `php artisan app:send-digests weekly`.
 Each community owner turns photos, GIFs and comment media on in **Settings → Photos and GIFs**. Everything is off by default.
 
 - **Photos in posts:** JPG, PNG or WebP. Every upload is checked to be a real image.
-- **Limits (whole platform):** a platform admin sets photos and GIFs per post (1–4) and the max photo size in **Admin settings → Photo limits**. The size is 1 MB by default and can never be more than 1 MB; it can be lower, e.g. 0.5. A bigger file gets an error.
+- **Upload limits (whole platform):** a platform admin sets them in **Admin settings → Upload limits**: photos and GIFs per post (1–4), max photo size (1 MB by default, never more than 1 MB), max lesson resource file and max lesson video (1 MB by default, up to 100 MB each). Any value can be lower, e.g. 0.5. A bigger file gets an error.
+- **The team can always add media:** owners, admins and moderators can add photos and GIFs to posts and comments even when the community switches are off. The switches are for members.
+- **GIFs** only show up as an option once a GIPHY key is saved.
 - **GIFs:** picked from GIPHY with search and trending, like WhatsApp. Results are rated PG-13 or lower, and there is one GIF per post. GIFs load from GIPHY, so they use no storage.
 - **Comments:** a separate switch allows one photo or one GIF per comment.
 - **GIPHY key:** a platform admin adds it in the app under **Admin settings** (user menu). It is checked with GIPHY, stored encrypted with `APP_KEY`, and never sent to the browser; searches go through the server. Get a free key at [developers.giphy.com](https://developers.giphy.com/dashboard/).

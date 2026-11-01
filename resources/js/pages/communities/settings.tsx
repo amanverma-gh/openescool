@@ -1,5 +1,6 @@
 import { type MediaItem } from '@/components/about/gallery';
 import { GalleryManager } from '@/components/about/gallery-manager';
+import { TeamManager, type TeamMember } from '@/components/community/team-manager';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -31,9 +32,11 @@ interface SettingsProps {
     media: MediaItem[];
     giphyReady: boolean;
     photoLimits: { max_images: number; max_kb: number };
+    team: TeamMember[];
+    canManageAdmins: boolean;
 }
 
-export default function Settings({ community, settings, categories, media, giphyReady, photoLimits }: SettingsProps) {
+export default function Settings({ community, settings, categories, media, giphyReady, photoLimits, team, canManageAdmins }: SettingsProps) {
     const form = useForm({
         name: settings.name,
         tagline: settings.tagline ?? '',
@@ -102,7 +105,7 @@ export default function Settings({ community, settings, categories, media, giphy
                         Admins must approve new members {form.data.privacy === 'private' && '(always on for private communities)'}
                     </label>
 
-                    <Field label="Photos and GIFs">
+                    <Field label={giphyReady ? 'Photos and GIFs' : 'Photos'}>
                         <div className="space-y-3">
                             <label className="flex items-center gap-2 text-sm">
                                 <Checkbox checked={form.data.allow_images} onCheckedChange={(v) => form.setData('allow_images', v === true)} />
@@ -113,20 +116,19 @@ export default function Settings({ community, settings, categories, media, giphy
                                     checked={form.data.allow_comment_media}
                                     onCheckedChange={(v) => form.setData('allow_comment_media', v === true)}
                                 />
-                                Also allow one photo or GIF in comments
+                                {giphyReady ? 'Also allow one photo or GIF in comments' : 'Also allow one photo in comments'}
                             </label>
-                            <label className="flex items-center gap-2 text-sm">
-                                <Checkbox checked={form.data.allow_gifs} onCheckedChange={(v) => form.setData('allow_gifs', v === true)} />
-                                Members can add GIFs from GIPHY (one per post or comment)
-                            </label>
-                            {form.data.allow_gifs && !giphyReady && (
-                                <p className="ml-6 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:bg-amber-950 dark:text-amber-100">
-                                    The GIF picker needs a GIPHY API key. A platform admin can add it under Admin settings.
-                                </p>
+                            {/* GIFs only make sense once a platform admin has added a GIPHY key. */}
+                            {giphyReady && (
+                                <label className="flex items-center gap-2 text-sm">
+                                    <Checkbox checked={form.data.allow_gifs} onCheckedChange={(v) => form.setData('allow_gifs', v === true)} />
+                                    Members can add GIFs from GIPHY (one per post or comment)
+                                </label>
                             )}
                             <p className="text-muted-foreground text-xs">
-                                Up to {photoLimits.max_images} {photoLimits.max_images === 1 ? 'photo or GIF' : 'photos or GIFs'} per post, each photo
-                                under {formatFileSize(photoLimits.max_kb)}. A platform admin sets these limits in Admin settings.
+                                Up to {photoLimits.max_images} {photoLimits.max_images === 1 ? 'item' : 'items'} per post, each photo under{' '}
+                                {formatFileSize(photoLimits.max_kb)}. Owners, admins and moderators can always add photos
+                                {giphyReady && ' and GIFs'}. A platform admin sets the limits in Admin settings.
                             </p>
                         </div>
                     </Field>
@@ -206,6 +208,8 @@ export default function Settings({ community, settings, categories, media, giphy
                         Save changes
                     </Button>
                 </form>
+
+                <TeamManager slug={community.slug} team={team} canManageAdmins={canManageAdmins} />
 
                 <GalleryManager slug={community.slug} media={media} />
 

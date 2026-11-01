@@ -1,6 +1,6 @@
 import { UserAvatar } from '@/components/community/user-avatar';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import CommunityLayout from '@/layouts/community-layout';
 import { cn, isOnline, timeAgo } from '@/lib/utils';
@@ -52,7 +52,9 @@ export default function Members({ community, members, filters, counts }: Members
     const act = (method: 'post' | 'patch' | 'delete', name: string, member: Member, data: Record<string, string | boolean> = {}) =>
         router.visit(route(name, [community.slug, member.member_id]), { method, data, preserveScroll: true });
 
-    const isOwner = community.membership?.role === 'owner';
+    const isOwner = community.membership?.role === 'owner' || !!auth.user?.is_admin;
+    const canChangeRole = (m: Member) =>
+        community.can.manage && filters.tab !== 'pending' && m.role !== 'owner' && m.id !== auth.user?.id && (isOwner || m.role !== 'admin');
 
     return (
         <CommunityLayout community={community}>
@@ -87,10 +89,23 @@ export default function Members({ community, members, filters, counts }: Members
                                     <Link href={route('users.show', m.username)} className="font-semibold hover:underline">
                                         {m.name}
                                     </Link>
-                                    {m.role !== 'member' && (
-                                        <span className="bg-brand/10 text-brand rounded-full px-2 py-0.5 text-xs font-medium capitalize">
-                                            {m.role}
-                                        </span>
+                                    {canChangeRole(m) ? (
+                                        <select
+                                            aria-label={`Role for ${m.name}`}
+                                            value={m.role}
+                                            onChange={(e) => act('patch', 'members.update', m, { role: e.target.value })}
+                                            className="border-input bg-background h-7 rounded-md border px-1.5 text-xs"
+                                        >
+                                            <option value="member">Member</option>
+                                            <option value="moderator">Moderator</option>
+                                            {isOwner && <option value="admin">Admin</option>}
+                                        </select>
+                                    ) : (
+                                        m.role !== 'member' && (
+                                            <span className="bg-brand/10 text-brand rounded-full px-2 py-0.5 text-xs font-medium capitalize">
+                                                {m.role}
+                                            </span>
+                                        )
                                     )}
                                 </div>
                                 <div className="text-muted-foreground text-sm">@{m.username}</div>
@@ -139,24 +154,8 @@ export default function Members({ community, members, filters, counts }: Members
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
-                                        {isOwner && m.role !== 'admin' && (
-                                            <DropdownMenuItem onSelect={() => act('patch', 'members.update', m, { role: 'admin' })}>
-                                                Make admin
-                                            </DropdownMenuItem>
-                                        )}
-                                        {m.role !== 'moderator' && (isOwner || m.role !== 'admin') && (
-                                            <DropdownMenuItem onSelect={() => act('patch', 'members.update', m, { role: 'moderator' })}>
-                                                Make moderator
-                                            </DropdownMenuItem>
-                                        )}
-                                        {m.role !== 'member' && (isOwner || m.role !== 'admin') && (
-                                            <DropdownMenuItem onSelect={() => act('patch', 'members.update', m, { role: 'member' })}>
-                                                Remove role
-                                            </DropdownMenuItem>
-                                        )}
                                         {(isOwner || m.role !== 'admin') && (
                                             <>
-                                                <DropdownMenuSeparator />
                                                 <DropdownMenuItem
                                                     onSelect={() => confirm(`Remove ${m.name}?`) && act('delete', 'members.destroy', m)}
                                                     className="text-red-600"

@@ -16,7 +16,7 @@ use Inertia\Response;
 
 class CommunitySettingsController extends Controller
 {
-    public function edit(Community $community): Response
+    public function edit(Request $request, Community $community): Response
     {
         $this->authorize('manage', $community);
 
@@ -29,6 +29,13 @@ class CommunitySettingsController extends Controller
             'categories' => $community->categories()->withCount('posts')->get(),
             'media' => $community->media()->get()->map->toPublicArray(),
             'giphyReady' => filled(AppSetting::get('giphy_api_key')),
+            'team' => $community->activeMembers()
+                ->with('user')
+                ->whereIn('role', CommunityMember::STAFF_ROLES)
+                ->orderByRaw("case role when 'owner' then 0 when 'admin' then 1 else 2 end")
+                ->get()
+                ->map(fn (CommunityMember $m) => $m->user->toPublicArray() + ['member_id' => $m->id, 'role' => $m->role]),
+            'canManageAdmins' => $community->membershipFor($request->user())?->role === CommunityMember::ROLE_OWNER || $request->user()->is_admin,
             // Set platform-wide in Admin settings; shown here so owners know the limits.
             'photoLimits' => ['max_images' => AppSetting::maxImages(), 'max_kb' => AppSetting::maxUploadKb()],
         ]);

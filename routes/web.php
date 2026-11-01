@@ -89,6 +89,8 @@ Route::prefix('c/{community}')->group(function () {
     Route::get('posts/{post}', [PostController::class, 'show'])->name('posts.show');
     Route::get('classroom', [ClassroomController::class, 'index'])->name('classroom.index');
     Route::get('classroom/{course}', [ClassroomController::class, 'show'])->name('classroom.show');
+    Route::get('lessons/{lesson}/files/{index}', [LessonController::class, 'file'])->whereNumber('index')->name('lessons.file');
+    Route::get('lessons/{lesson}/video', [LessonController::class, 'video'])->name('lessons.video');
     Route::get('calendar', [EventController::class, 'index'])->name('calendar.index');
     Route::get('calendar/{event}.ics', [EventController::class, 'ics'])->name('events.ics');
     Route::get('leaderboards', [LeaderboardController::class, 'index'])->name('leaderboards.index');
@@ -120,6 +122,7 @@ Route::prefix('c/{community}')->group(function () {
         Route::post('posts/{post}/like', [LikeController::class, 'post'])->name('posts.like');
         Route::post('comments/{comment}/like', [LikeController::class, 'comment'])->name('comments.like');
 
+        Route::get('members/search', [MemberController::class, 'search'])->middleware('throttle:60,1')->name('members.search');
         Route::post('members/{member}/approve', [MemberController::class, 'approve'])->name('members.approve');
         Route::patch('members/{member}', [MemberController::class, 'update'])->name('members.update');
         Route::delete('members/{member}', [MemberController::class, 'destroy'])->name('members.destroy');

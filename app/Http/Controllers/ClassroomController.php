@@ -88,7 +88,12 @@ class ClassroomController extends Controller
                     'completed' => isset($done[$l->id]),
                 ]),
             ]),
-            'lesson' => $current ? $current->only(['id', 'title', 'body', 'video_url', 'resources', 'is_published', 'course_module_id']) + [
+            'lesson' => $current ? $current->only(['id', 'title', 'body', 'video_url', 'is_published', 'course_module_id']) + [
+                // Uploaded files get a download link that checks access; `path` lets the editor keep them.
+                'resources' => collect($current->resources ?? [])->map(fn (array $r, int $i) => isset($r['path'])
+                    ? ['label' => $r['label'], 'url' => route('lessons.file', [$community, $current, $i]), 'path' => $r['path'], 'name' => $r['name'] ?? null, 'size' => $r['size'] ?? null]
+                    : $r)->all(),
+                'video_file_url' => $current->video_path ? route('lessons.video', [$community, $current]) : null,
                 'completed' => isset($done[$current->id]),
                 'previous_id' => $index > 0 ? $lessons[$index - 1]->id : null,
                 'next_id' => $lessons[$index + 1]->id ?? null,
@@ -136,6 +141,7 @@ class ClassroomController extends Controller
         if ($course->cover_path) {
             Storage::disk('public')->delete($course->cover_path);
         }
+        Storage::disk('local')->delete($course->lessons->flatMap->filePaths()->all());
         $course->delete();
 
         return to_route('classroom.index', $community)->with('success', 'Course deleted.');

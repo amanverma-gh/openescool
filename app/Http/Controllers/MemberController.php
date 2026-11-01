@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Community;
 use App\Models\CommunityMember;
 use App\Services\MembershipService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -80,25 +81,48 @@ class MemberController extends Controller
             'role' => ['required', Rule::in([CommunityMember::ROLE_ADMIN, CommunityMember::ROLE_MODERATOR, CommunityMember::ROLE_MEMBER])],
         ]);
 
-        // Only the owner can promote or demote admins.
-        $actor = $community->membershipFor($request->user());
+        // Only the owner (or a platform admin) can promote or demote admins.
         abort_if(
             ($data['role'] === CommunityMember::ROLE_ADMIN || $member->role === CommunityMember::ROLE_ADMIN)
-                && $actor->role !== CommunityMember::ROLE_OWNER,
+                && ! $this->actsAsOwner($request, $community),
             403,
         );
+        abort_unless($member->isActive(), 422, 'Only active members can join the team.');
 
         $member->update($data);
 
-        return back()->with('success', "{$member->user->name} is now a {$data['role']}.");
+        return back()->with('success', $data['role'] === CommunityMember::ROLE_MEMBER
+            ? "{$member->user->name} is no longer on the team."
+            : "{$member->user->name} is now a {$data['role']}.");
+    }
+
+    /**
+     * Find members to add to the team (Settings → Team).
+     */
+    public function search(Request $request, Community $community): JsonResponse
+    {
+        $this->authorize('manage', $community);
+        $q = $request->validate(['q' => ['required', 'string', 'max:100']])['q'];
+
+        return response()->json($community->activeMembers()
+            ->with('user')
+            ->where('role', CommunityMember::ROLE_MEMBER)
+            ->whereHas('user', fn ($u) => $u->where('name', 'like', "%{$q}%")->orWhere('username', 'like', "%{$q}%"))
+            ->limit(8)
+            ->get()
+            ->map(fn (CommunityMember $m) => $m->user->toPublicArray() + ['member_id' => $m->id]));
+    }
+
+    protected function actsAsOwner(Request $request, Community $community): bool
+    {
+        return $community->membershipFor($request->user())?->role === CommunityMember::ROLE_OWNER || $request->user()->is_admin;
     }
 
     public function destroy(Request $request, Community $community, CommunityMember $member, MembershipService $memberships): RedirectResponse
     {
         $this->authorizeMember($community, $member);
 
-        $actor = $community->membershipFor($request->user());
-        abort_if($member->role === CommunityMember::ROLE_ADMIN && $actor->role !== CommunityMember::ROLE_OWNER, 403);
+        abort_if($member->role === CommunityMember::ROLE_ADMIN && ! $this->actsAsOwner($request, $community), 403);
 
         $memberships->remove($member, ban: $request->boolean('ban'));
 
