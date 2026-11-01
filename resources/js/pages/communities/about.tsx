@@ -1,3 +1,6 @@
+import { Gallery, type MediaItem } from '@/components/about/gallery';
+import { Reviews, type ReviewItem } from '@/components/about/reviews';
+import { RatingSummary } from '@/components/about/stars';
 import { RichText } from '@/components/community/rich-text';
 import { CommunityIcon } from '@/components/community/top-bar';
 import { UserAvatar } from '@/components/community/user-avatar';
@@ -9,16 +12,22 @@ import CommunityLayout from '@/layouts/community-layout';
 import { formatCount, formatMoney, intervalLabel } from '@/lib/utils';
 import { type Community, type Plan, type PublicUser, type SharedData } from '@/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { Globe, LoaderCircle, Lock } from 'lucide-react';
+import { Globe, LoaderCircle, Lock, Tag, Users } from 'lucide-react';
 import { useState } from 'react';
 
 interface AboutProps {
     community: Community & { about: string | null; requires_approval: boolean; join_questions: string[]; created_at: string; plans: Plan[] };
     admins: (PublicUser & { role: string })[];
     stats: { members: number; posts: number; online: number };
+    media: MediaItem[];
+    rating: { average: number | null; count: number };
+    reviews: ReviewItem[];
+    canReview: boolean;
+    myReview: { rating: number; body: string } | null;
 }
 
-export default function About({ community, admins, stats }: AboutProps) {
+export default function About({ community, admins, stats, media, rating, reviews, canReview, myReview }: AboutProps) {
+    const owner = admins.find((a) => a.role === 'owner') ?? admins[0];
     const { auth } = usePage<SharedData>().props;
     const [asking, setAsking] = useState(false);
     const form = useForm({ answers: community.join_questions.map(() => '') });
@@ -42,79 +51,110 @@ export default function About({ community, admins, stats }: AboutProps) {
             <Head title={`About ${community.name}`} />
 
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
-                <div className="bg-card overflow-hidden rounded-xl border shadow-xs">
-                    {community.cover ? (
-                        <img src={community.cover} alt="" className="aspect-video w-full object-cover" />
-                    ) : (
-                        <div className="from-brand/70 to-brand aspect-[3/1] w-full bg-gradient-to-br" />
-                    )}
-                    <div className="p-6">
+                <div className="bg-card space-y-5 rounded-xl border p-5 shadow-xs sm:p-6">
+                    <div>
                         <h1 className="text-2xl font-bold">{community.name}</h1>
-                        <div className="text-muted-foreground mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm">
-                            <span className="inline-flex items-center gap-1">
-                                {community.privacy === 'public' ? <Globe className="size-4" /> : <Lock className="size-4" />}
-                                {community.privacy === 'public' ? 'Public group' : 'Private group'}
-                            </span>
-                            <span>{formatCount(stats.members)} members</span>
-                            <span>{formatCount(stats.posts)} posts</span>
-                            {admins[0] && <span>By {admins[0].name}</span>}
-                        </div>
-                        <div className="mt-6">
-                            <RichText text={community.about || community.tagline || 'No description yet.'} className="leading-relaxed" />
-                        </div>
+                        {rating.count > 0 && (
+                            <a href="#reviews" className="mt-1 inline-block hover:underline">
+                                <RatingSummary average={rating.average} count={rating.count} />
+                            </a>
+                        )}
                     </div>
+
+                    <Gallery items={media} fallback={community.cover} title={community.name} />
+
+                    <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+                        <span className="inline-flex items-center gap-1.5">
+                            {community.privacy === 'public' ? <Globe className="size-4" /> : <Lock className="size-4" />}
+                            {community.privacy === 'public' ? 'Public' : 'Private'}
+                        </span>
+                        <span className="inline-flex items-center gap-1.5">
+                            <Users className="size-4" />
+                            {formatCount(stats.members)} members
+                        </span>
+                        <span className="inline-flex items-center gap-1.5">
+                            <Tag className="size-4" />
+                            {paid && cheapest ? `${formatMoney(cheapest.amount, cheapest.currency)}${intervalLabel(cheapest.interval)}` : 'Free'}
+                        </span>
+                        {owner && (
+                            <Link href={route('users.show', owner.username)} className="inline-flex items-center gap-1.5 hover:underline">
+                                <UserAvatar user={owner} size="xs" link={false} />
+                                By {owner.name}
+                            </Link>
+                        )}
+                    </div>
+
+                    <RichText text={community.about || community.tagline || 'No description yet.'} className="leading-relaxed" />
+
+                    <Reviews
+                        slug={community.slug}
+                        name={community.name}
+                        rating={rating}
+                        reviews={reviews}
+                        canReview={canReview}
+                        canManage={community.can.manage}
+                        myReview={myReview}
+                    />
                 </div>
 
                 <aside className="space-y-4">
-                    <div className="bg-card space-y-4 rounded-xl border p-5 shadow-xs">
-                        <div className="flex items-center gap-2">
-                            <CommunityIcon community={community} className="size-10" />
-                            <div>
-                                <div className="font-semibold">{community.name}</div>
-                                {community.tagline && <div className="text-muted-foreground line-clamp-2 text-xs">{community.tagline}</div>}
+                    <div className="bg-card overflow-hidden rounded-xl border shadow-xs">
+                        {community.cover && <img src={community.cover} alt="" className="aspect-video w-full object-cover" />}
+                        <div className="space-y-4 p-5">
+                            <div className="flex items-start gap-2">
+                                {!community.cover && <CommunityIcon community={community} className="size-10" />}
+                                <div className="min-w-0">
+                                    <div className="font-semibold">{community.name}</div>
+                                    <div className="text-muted-foreground truncate text-xs">
+                                        {window.location.host}/c/{community.slug}
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div className="grid grid-cols-3 border-y py-3 text-center">
-                            <Stat value={stats.members} label="Members" />
-                            <Stat value={stats.online} label="Online" />
-                            <Stat value={admins.length} label="Admins" />
-                        </div>
+                            {community.tagline && <p className="text-sm">{community.tagline}</p>}
+                            <div className="grid grid-cols-3 border-y py-3 text-center">
+                                <Stat value={stats.members} label="Members" />
+                                <Stat value={stats.online} label="Online" />
+                                <Stat value={admins.length} label="Admins" />
+                            </div>
 
-                        {paid && (!status || status === 'expired') && (
-                            <div className="space-y-2">
-                                <Button className="w-full" size="lg" asChild>
-                                    <Link href={auth.user ? route('billing.checkout', community.slug) : route('register')}>
-                                        {status === 'expired' ? 'Rejoin' : 'Join'}
-                                        {cheapest && ` · ${formatMoney(cheapest.amount, cheapest.currency)}${intervalLabel(cheapest.interval)}`}
-                                    </Link>
+                            {paid && (!status || status === 'expired') && (
+                                <div className="space-y-2">
+                                    <Button className="w-full" size="lg" asChild>
+                                        <Link href={auth.user ? route('billing.checkout', community.slug) : route('register')}>
+                                            {status === 'expired' ? 'Rejoin' : 'Join'}
+                                            {cheapest && ` · ${formatMoney(cheapest.amount, cheapest.currency)}${intervalLabel(cheapest.interval)}`}
+                                        </Link>
+                                    </Button>
+                                    {community.plans.length > 1 && (
+                                        <p className="text-muted-foreground text-center text-xs">{community.plans.length} plans available</p>
+                                    )}
+                                </div>
+                            )}
+                            {!paid && (!status || status === 'expired') && (
+                                <Button className="w-full" size="lg" onClick={join} disabled={form.processing}>
+                                    {form.processing && <LoaderCircle className="size-4 animate-spin" />}
+                                    {community.requires_approval ? 'Request to join' : status === 'expired' ? 'Rejoin group' : 'Join group'}
                                 </Button>
-                                {community.plans.length > 1 && (
-                                    <p className="text-muted-foreground text-center text-xs">{community.plans.length} plans available</p>
-                                )}
-                            </div>
-                        )}
-                        {!paid && (!status || status === 'expired') && (
-                            <Button className="w-full" size="lg" onClick={join} disabled={form.processing}>
-                                {form.processing && <LoaderCircle className="size-4 animate-spin" />}
-                                {community.requires_approval ? 'Request to join' : status === 'expired' ? 'Rejoin group' : 'Join group'}
-                            </Button>
-                        )}
-                        {status === 'pending' && (
-                            <p className="bg-muted rounded-md px-3 py-2 text-center text-sm">Your request is pending approval.</p>
-                        )}
-                        {status === 'banned' && <p className="bg-muted rounded-md px-3 py-2 text-center text-sm">You can't join this community.</p>}
-                        {status === 'active' && (
-                            <>
-                                <Button className="w-full" asChild>
-                                    <Link href={route('communities.feed', community.slug)}>Go to community</Link>
-                                </Button>
-                                {community.membership?.role !== 'owner' && (
-                                    <button onClick={leave} className="text-muted-foreground w-full text-xs hover:text-red-600">
-                                        Leave community
-                                    </button>
-                                )}
-                            </>
-                        )}
+                            )}
+                            {status === 'pending' && (
+                                <p className="bg-muted rounded-md px-3 py-2 text-center text-sm">Your request is pending approval.</p>
+                            )}
+                            {status === 'banned' && (
+                                <p className="bg-muted rounded-md px-3 py-2 text-center text-sm">You can't join this community.</p>
+                            )}
+                            {status === 'active' && (
+                                <>
+                                    <Button className="w-full" asChild>
+                                        <Link href={route('communities.feed', community.slug)}>Go to community</Link>
+                                    </Button>
+                                    {community.membership?.role !== 'owner' && (
+                                        <button onClick={leave} className="text-muted-foreground w-full text-xs hover:text-red-600">
+                                            Leave community
+                                        </button>
+                                    )}
+                                </>
+                            )}
+                        </div>
                     </div>
 
                     {admins.length > 0 && (

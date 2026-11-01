@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Community;
 use App\Models\CommunityMember;
+use App\Models\Review;
+use App\Models\Subscription;
 use App\Services\MembershipService;
+use Carbon\CarbonInterface;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -22,11 +25,16 @@ class CommunityController extends Controller
         $user = $request->user();
 
         $mine = $user
-            ? $user->communities()->orderBy('name')->get(['communities.*'])
+            ? $user->communities()->select('communities.*')
+                ->withAvg(['reviews as rating_avg' => fn ($q) => $q->visible()], 'rating')
+                ->withCount(['reviews as rating_count' => fn ($q) => $q->visible()])
+                ->orderBy('name')->get()
             : collect();
 
         $discover = Community::query()
             ->where('privacy', Community::PRIVACY_PUBLIC)
+            ->withAvg(['reviews as rating_avg' => fn ($q) => $q->visible()], 'rating')
+            ->withCount(['reviews as rating_count' => fn ($q) => $q->visible()])
             ->whereNotIn('id', $mine->pluck('id'))
             ->orderByDesc('members_count')
             ->limit(30)
@@ -105,6 +113,11 @@ class CommunityController extends Controller
                     : [],
             ],
             'admins' => $admins,
+            'media' => $community->media()->get()->map->toPublicArray(),
+            'rating' => $community->ratingSummary(),
+            'reviews' => $this->reviews($request, $community),
+            'canReview' => ($me = $community->membershipFor($request->user()))?->isActive() && $me->role !== CommunityMember::ROLE_OWNER,
+            'myReview' => $request->user() ? $community->reviews()->where('user_id', $request->user()->id)->first()?->only(['rating', 'body']) : null,
             'stats' => [
                 'members' => $community->members_count,
                 'posts' => $community->posts()->count(),
@@ -116,10 +129,56 @@ class CommunityController extends Controller
     }
 
     /**
+     * Newest reviews with a tenure label ("Still a paying member after 4 months").
+     * Managers also see hidden reviews so they can restore them.
+     *
+     * @return list<array<string, mixed>>
+     */
+    protected function reviews(Request $request, Community $community): array
+    {
+        $canManage = (bool) $request->user()?->can('manage', $community);
+
+        $reviews = $community->reviews()
+            ->when(! $canManage, fn ($q) => $q->visible())
+            ->with('user')
+            ->latest()
+            ->limit(50)
+            ->get();
+
+        $userIds = $reviews->pluck('user_id');
+        $members = $community->members()->whereIn('user_id', $userIds)->get()->keyBy('user_id');
+        $paying = $community->subscriptions()->whereIn('user_id', $userIds)->where('status', '!=', Subscription::ENDED)->get()
+            ->filter(fn (Subscription $s) => $s->grantsAccess())
+            ->pluck('user_id')
+            ->flip();
+
+        return $reviews->map(function (Review $review) use ($members, $paying) {
+            $member = $members[$review->user_id] ?? null;
+            $since = $member?->joined_at ? $member->joined_at->min(now()->subDay())->diffForHumans(now(), CarbonInterface::DIFF_ABSOLUTE, parts: 1) : null;
+
+            return [
+                'id' => $review->id,
+                'rating' => $review->rating,
+                'body' => $review->body,
+                'is_hidden' => $review->is_hidden,
+                'created_at' => $review->created_at,
+                'user' => $review->user->toPublicArray(),
+                'tenure' => match (true) {
+                    ! $member?->isActive() => 'Former member',
+                    isset($paying[$review->user_id]) => "Still a paying member after {$since}",
+                    default => "Member for {$since}",
+                },
+            ];
+        })->all();
+    }
+
+    /**
      * @return array<string, mixed>
      */
     protected function card(Community $community): array
     {
-        return $community->only(['id', 'name', 'slug', 'tagline', 'icon', 'cover', 'privacy', 'members_count']);
+        return $community->only(['id', 'name', 'slug', 'tagline', 'icon', 'cover', 'privacy', 'members_count']) + [
+            'rating' => $community->rating_count ? ['average' => round((float) $community->rating_avg, 1), 'count' => (int) $community->rating_count] : null,
+        ];
     }
 }

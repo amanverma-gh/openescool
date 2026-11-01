@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Community;
+use App\Models\CommunityMember;
 use App\Models\Course;
 use App\Models\Event;
 use App\Models\PointEvent;
@@ -86,6 +87,17 @@ class DatabaseSeeder extends Seeder
 
         $this->seedClassroom($community);
         $this->seedEvents($community, $admin);
+
+        $reviews = [
+            [5, 'The weekly calls alone are worth it. I shipped my first product within a month of joining, and people here actually reply when you get stuck.'],
+            [5, 'Clear, structured lessons and a community that keeps you accountable. Best decision I made this year.'],
+            [4, 'Lots of practical content. I wish there were more beginner lessons, but the admins are adding new ones every week.'],
+            [5, 'I came for the course and stayed for the people. Every win gets celebrated here.'],
+        ];
+        $community->members()->where('role', CommunityMember::ROLE_MEMBER)->with('user')->limit(count($reviews))->get()
+            ->each(fn (CommunityMember $m, int $i) => $community->reviews()->create([
+                'user_id' => $m->user_id, 'rating' => $reviews[$i][0], 'body' => $reviews[$i][1],
+            ]));
 
         // Ready-made plans; the community stays free until the owner switches it to paid.
         $community->plans()->create(['name' => 'Monthly', 'interval' => 'month', 'amount' => 4900, 'currency' => 'USD']);

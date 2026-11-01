@@ -26,6 +26,7 @@ class CommunitySettingsController extends Controller
                 'level_names' => $community->levelNames(),
             ],
             'categories' => $community->categories()->withCount('posts')->get(),
+            'media' => $community->media()->get()->map->toPublicArray(),
         ]);
     }
 

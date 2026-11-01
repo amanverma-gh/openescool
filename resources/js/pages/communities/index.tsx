@@ -4,9 +4,15 @@ import AppLayout from '@/layouts/app-layout';
 import { formatCount } from '@/lib/utils';
 import { type CommunityLink, type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { Lock, Plus, Users } from 'lucide-react';
+import { Lock, Plus, Star, Users } from 'lucide-react';
 
-type Card = CommunityLink & { tagline: string | null; cover: string | null; privacy: string; members_count: number };
+type Card = CommunityLink & {
+    tagline: string | null;
+    cover: string | null;
+    privacy: string;
+    members_count: number;
+    rating: { average: number; count: number } | null;
+};
 
 export default function Index({ mine, discover, canCreate }: { mine: Card[]; discover: Card[]; canCreate: boolean }) {
     const { auth, name } = usePage<SharedData>().props;
@@ -88,6 +94,11 @@ function Section({ title, communities }: { title: string; communities: Card[] })
                                 <span className="inline-flex items-center gap-1">
                                     <Users className="size-3.5" /> {formatCount(c.members_count)} members
                                 </span>
+                                {c.rating && (
+                                    <span className="inline-flex items-center gap-1">
+                                        <Star className="size-3.5 fill-amber-400 text-amber-400" /> {c.rating.average.toFixed(1)} ({c.rating.count})
+                                    </span>
+                                )}
                                 {c.privacy === 'private' && (
                                     <span className="inline-flex items-center gap-1">
                                         <Lock className="size-3.5" /> Private

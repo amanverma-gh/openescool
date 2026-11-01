@@ -5,6 +5,7 @@ use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CommunityController;
+use App\Http\Controllers\CommunityMediaController;
 use App\Http\Controllers\CommunitySettingsController;
 use App\Http\Controllers\EmailPreferencesController;
 use App\Http\Controllers\EventController;
@@ -17,6 +18,7 @@ use App\Http\Controllers\MembershipController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\PricingController;
+use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\UserProfileController;
 use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
@@ -107,6 +109,14 @@ Route::prefix('c/{community}')->group(function () {
         Route::post('calendar', [EventController::class, 'store'])->name('events.store');
         Route::patch('calendar/{event}', [EventController::class, 'update'])->name('events.update');
         Route::delete('calendar/{event}', [EventController::class, 'destroy'])->name('events.destroy');
+
+        Route::post('reviews', [ReviewController::class, 'store'])->middleware('throttle:content')->name('reviews.store');
+        Route::delete('reviews', [ReviewController::class, 'destroy'])->name('reviews.destroy');
+        Route::post('reviews/{review}/hide', [ReviewController::class, 'toggleHidden'])->name('reviews.hide');
+
+        Route::post('media', [CommunityMediaController::class, 'store'])->name('media.store');
+        Route::delete('media/{media}', [CommunityMediaController::class, 'destroy'])->name('media.destroy');
+        Route::post('media/{media}/move', [CommunityMediaController::class, 'move'])->name('media.move');
 
         Route::get('settings', [CommunitySettingsController::class, 'edit'])->name('communities.settings');
         Route::post('settings', [CommunitySettingsController::class, 'update'])->name('communities.settings.update');

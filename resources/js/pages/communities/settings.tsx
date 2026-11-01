@@ -1,3 +1,5 @@
+import { type MediaItem } from '@/components/about/gallery';
+import { GalleryManager } from '@/components/about/gallery-manager';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -23,9 +25,10 @@ interface SettingsProps {
         level_names: (string | null)[];
     };
     categories: (Category & { posts_count: number; position: number })[];
+    media: MediaItem[];
 }
 
-export default function Settings({ community, settings, categories }: SettingsProps) {
+export default function Settings({ community, settings, categories, media }: SettingsProps) {
     const form = useForm({
         name: settings.name,
         tagline: settings.tagline ?? '',
@@ -166,6 +169,8 @@ export default function Settings({ community, settings, categories }: SettingsPr
                         Save changes
                     </Button>
                 </form>
+
+                <GalleryManager slug={community.slug} media={media} />
 
                 <CategoryManager community={community} categories={categories} />
             </div>

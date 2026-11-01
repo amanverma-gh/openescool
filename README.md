@@ -79,6 +79,7 @@ To test webhooks on your own computer, use `stripe listen --forward-to localhost
 - **Digest:** members get a weekly summary by default (Monday 08:00): the most popular new posts in each of their communities and events coming up. They can switch to daily (08:00 every day) or off in Settings → Email. Times use the app timezone (`APP_TIMEZONE`). Nobody gets an empty digest, and a post is never sent twice.
 - **Activity emails** (comments, mentions, join requests, event reminders, level-ups) can each be turned off in Settings → Email. In-app notifications always arrive.
 - Every email has a signed unsubscribe link that works without logging in. Digests also send the `List-Unsubscribe` one-click header that Gmail and Yahoo require from bulk senders.
+- **About page:** a gallery of images and YouTube/Vimeo/Loom videos (Settings → About page gallery), star ratings and reviews from current members, each labelled with how long the reviewer has been a member and whether they still pay. Owners can hide abusive reviews; ratings also show on the Discover page.
 - Members get a notification when likes push them to a new level, along with any courses it unlocks. Owners can name each level (Settings → Level names); the names show on the leaderboard and on locked courses.
 
 Send a digest by hand with `php artisan app:send-digests weekly`.

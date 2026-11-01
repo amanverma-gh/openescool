@@ -128,6 +128,29 @@ class Community extends Model
         return $this->hasMany(Event::class);
     }
 
+    public function media(): HasMany
+    {
+        return $this->hasMany(CommunityMedia::class)->orderBy('position');
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    /**
+     * @return array{average: float|null, count: int}
+     */
+    public function ratingSummary(): array
+    {
+        $row = $this->reviews()->visible()->selectRaw('avg(rating) as average, count(*) as total')->first();
+
+        return [
+            'average' => $row->total ? round((float) $row->average, 1) : null,
+            'count' => (int) $row->total,
+        ];
+    }
+
     public function plans(): HasMany
     {
         return $this->hasMany(Plan::class)->orderBy('amount');
