@@ -43,6 +43,8 @@ abstract class Controller
             'access_type' => $community->access_type,
             'level_names' => $community->levelNames(),
             'members_count' => $community->members_count,
+            'allow_images' => (bool) $community->allow_images,
+            'allow_gifs' => (bool) $community->allow_gifs,
             'membership' => $membership ? [
                 'role' => $membership->role,
                 'status' => $membership->status,

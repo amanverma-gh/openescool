@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { timeAgo } from '@/lib/utils';
 import { type Comment, type Community, type SharedData } from '@/types';
 import { Link, router, useForm, usePage } from '@inertiajs/react';
-import { LoaderCircle } from 'lucide-react';
+import { Flag, LoaderCircle, Trash2 } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 
 interface ThreadContext {
@@ -151,16 +151,18 @@ function CommentItem({ comment, ctx, isReply = false }: { comment: Comment; ctx:
                             </button>
                         )}
                         {comment.can.delete && (
-                            <button onClick={remove} className="hover:text-red-600">
-                                Delete
+                            <button onClick={remove} className="hover:text-red-600" title="Delete" aria-label="Delete comment">
+                                <Trash2 className="size-3.5" />
                             </button>
                         )}
                         {auth.user && auth.user.id !== comment.author.id && (
                             <button
                                 onClick={() => router.post(route('report', ['comment', comment.id]), {}, { preserveScroll: true })}
                                 className="hover:text-red-600"
+                                title="Report spam"
+                                aria-label="Report comment as spam"
                             >
-                                Report
+                                <Flag className="size-3.5" />
                             </button>
                         )}
                     </div>

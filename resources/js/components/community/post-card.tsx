@@ -10,7 +10,8 @@ export function PostCard({ post, community }: { post: Post; community: Community
     const { auth } = usePage<SharedData>().props;
     const href = route('posts.show', [community.slug, post.id]);
     const video = findVideoEmbed(post.body);
-    const thumbnail = video?.includes('youtube') ? `https://i.ytimg.com/vi/${video.split('/').pop()}/hqdefault.jpg` : null;
+    const videoThumb = video?.includes('youtube') ? `https://i.ytimg.com/vi/${video.split('/').pop()}/hqdefault.jpg` : null;
+    const thumbnail = post.attachments[0]?.url ?? videoThumb;
 
     return (
         <article className="bg-card group relative rounded-xl border p-5 shadow-xs transition-shadow hover:shadow-md">
@@ -49,7 +50,12 @@ export function PostCard({ post, community }: { post: Post; community: Community
                 {thumbnail && (
                     <div className="relative hidden h-20 w-32 shrink-0 overflow-hidden rounded-lg sm:block">
                         <img src={thumbnail} alt="" className="size-full object-cover" loading="lazy" />
-                        <PlayCircle className="absolute inset-0 m-auto size-8 text-white drop-shadow" />
+                        {!post.attachments[0] && <PlayCircle className="absolute inset-0 m-auto size-8 text-white drop-shadow" />}
+                        {post.attachments.length > 1 && (
+                            <span className="absolute right-1 bottom-1 rounded bg-black/70 px-1.5 text-[11px] font-semibold text-white">
+                                +{post.attachments.length - 1}
+                            </span>
+                        )}
                     </div>
                 )}
             </div>

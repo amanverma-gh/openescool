@@ -41,6 +41,7 @@ class PostResource extends JsonResource
             'comments_count' => $this->comments_count,
             'liked' => (bool) ($this->liked ?? false),
             'author' => $this->author->toPublicArray() + ['level' => $this->author_level],
+            'attachments' => $this->attachmentList(),
             'category' => $this->category?->only(['id', 'name', 'slug', 'emoji']),
             'recent_commenters' => $this->recent_commenters ?? [],
             'created_at' => $this->created_at,

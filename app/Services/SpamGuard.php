@@ -123,6 +123,7 @@ class SpamGuard
         abort_if(Community::where('owner_id', $user->id)->exists(), 422, 'This user owns a community. Transfer or delete it first.');
 
         $communities = Community::whereIn('id', $user->memberships()->select('community_id'))->get();
+        $files = Post::withoutGlobalScopes()->where('user_id', $user->id)->pluck('attachments')->filter()->flatten()->all();
 
         DB::transaction(function () use ($user) {
             DB::table('sessions')->where('user_id', $user->id)->delete();
@@ -130,6 +131,7 @@ class SpamGuard
             $user->delete(); // posts, comments, messages, likes and memberships cascade
         });
 
+        Post::deleteFiles($files);
         $communities->each->refreshMembersCount();
     }
 

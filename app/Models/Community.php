@@ -32,6 +32,8 @@ class Community extends Model
         'requires_approval',
         'join_questions',
         'level_names',
+        'allow_images',
+        'allow_gifs',
     ];
 
     protected $hidden = ['icon_path', 'cover_path'];
@@ -44,6 +46,8 @@ class Community extends Model
             'requires_approval' => 'boolean',
             'join_questions' => 'array',
             'level_names' => 'array',
+            'allow_images' => 'boolean',
+            'allow_gifs' => 'boolean',
         ];
     }
 

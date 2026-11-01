@@ -17,6 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -63,7 +64,11 @@ class PostController extends Controller
             return back()->with('error', 'Your post is being reviewed by an admin. You can post again once it is approved.');
         }
 
-        $post = $community->posts()->create([...$data, 'user_id' => $request->user()->id]);
+        $post = $community->posts()->create([
+            ...$data,
+            'user_id' => $request->user()->id,
+            'attachments' => $this->storeUploads($request, $community, []),
+        ]);
 
         $this->notifyMentions($post, $post->body);
 
@@ -85,7 +90,13 @@ class PostController extends Controller
             return to_route('communities.feed', $community)->with('error', 'Your post is being reviewed by an admin.');
         }
 
-        $post->update($data);
+        // Keep the attachments the author didn't remove, then add new uploads.
+        $current = $post->attachments ?? [];
+        $kept = array_values(array_intersect($current, (array) $request->input('keep_attachments', [])));
+        $attachments = $this->storeUploads($request, $community, $kept);
+
+        $post->update([...$data, 'attachments' => $attachments ?: null]);
+        Post::deleteFiles(array_values(array_diff($current, $kept)));
 
         return back()->with('success', 'Post updated.');
     }
@@ -128,6 +139,47 @@ class PostController extends Controller
             ],
             'comments_disabled' => ['sometimes', 'boolean'],
         ]);
+    }
+
+    /**
+     * Validate and save new photo/GIF uploads, if this community allows them.
+     *
+     * @param  list<string>  $existing
+     * @return list<string>|null
+     */
+    protected function storeUploads(Request $request, Community $community, array $existing): ?array
+    {
+        $types = array_merge(
+            $community->allow_images ? ['jpg', 'jpeg', 'png', 'webp'] : [],
+            $community->allow_gifs ? ['gif'] : [],
+        );
+
+        if (! $request->hasFile('attachments')) {
+            return $existing ?: null;
+        }
+
+        if (! $types) {
+            throw ValidationException::withMessages(['attachments' => 'This community does not allow photos or GIFs.']);
+        }
+
+        $request->validate([
+            'attachments' => ['array', 'max:'.(Post::MAX_ATTACHMENTS - count($existing))],
+            // `image` sniffs the real file type, so a renamed script can't sneak through.
+            'attachments.*' => ['file', 'image', 'mimes:'.implode(',', $types), 'max:'.Post::MAX_ATTACHMENT_KB,
+                // Belt and braces: the bytes must actually decode as an image.
+                fn (string $attribute, $file, $fail) => @getimagesize($file->getRealPath()) ?: $fail('That file is not a valid image.'),
+            ],
+        ], [
+            'attachments.max' => 'You can attach up to '.Post::MAX_ATTACHMENTS.' files.',
+            'attachments.*.max' => 'Each file must be under 1 MB.',
+            'attachments.*.mimes' => 'Allowed here: '.implode(', ', $types).'.',
+        ]);
+
+        foreach ($request->file('attachments') as $file) {
+            $existing[] = $file->store("posts/{$community->id}", 'public');
+        }
+
+        return $existing;
     }
 
     protected function notifyMentions(Post $post, string $text, ?Comment $comment = null): void

@@ -21,7 +21,7 @@ class CommunitySettingsController extends Controller
 
         return Inertia::render('communities/settings', [
             'community' => $this->communityProps($community),
-            'settings' => $community->only(['name', 'tagline', 'about', 'privacy', 'requires_approval']) + [
+            'settings' => $community->only(['name', 'tagline', 'about', 'privacy', 'requires_approval', 'allow_images', 'allow_gifs']) + [
                 'join_questions' => $community->join_questions ?? [],
                 'level_names' => $community->levelNames(),
             ],
@@ -40,6 +40,8 @@ class CommunitySettingsController extends Controller
             'about' => ['nullable', 'string', 'max:10000'],
             'privacy' => ['required', Rule::in([Community::PRIVACY_PUBLIC, Community::PRIVACY_PRIVATE])],
             'requires_approval' => ['boolean'],
+            'allow_images' => ['boolean'],
+            'allow_gifs' => ['boolean'],
             'join_questions' => ['array', 'max:3'],
             'join_questions.*' => ['string', 'max:200'],
             'level_names' => ['array', 'size:'.count(CommunityMember::LEVEL_THRESHOLDS)],

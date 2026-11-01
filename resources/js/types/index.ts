@@ -72,6 +72,8 @@ export interface Community extends CommunityLink {
     access_type: 'free' | 'paid';
     level_names: (string | null)[];
     members_count: number;
+    allow_images: boolean;
+    allow_gifs: boolean;
     membership: {
         role: Role;
         status: 'active' | 'pending' | 'banned' | 'expired';
@@ -99,11 +101,18 @@ export interface Post {
     comments_count: number;
     liked: boolean;
     author: PublicUser;
+    attachments: PostAttachment[];
     category: Category | null;
     recent_commenters: PublicUser[];
     created_at: string;
     last_activity_at: string;
     can: { update: boolean; delete: boolean; pin: boolean };
+}
+
+export interface PostAttachment {
+    path: string;
+    url: string;
+    gif: boolean;
 }
 
 export interface Comment {

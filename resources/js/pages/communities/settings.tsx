@@ -21,6 +21,8 @@ interface SettingsProps {
         about: string | null;
         privacy: 'public' | 'private';
         requires_approval: boolean;
+        allow_images: boolean;
+        allow_gifs: boolean;
         join_questions: string[];
         level_names: (string | null)[];
     };
@@ -35,6 +37,8 @@ export default function Settings({ community, settings, categories, media }: Set
         about: settings.about ?? '',
         privacy: settings.privacy,
         requires_approval: settings.requires_approval,
+        allow_images: settings.allow_images,
+        allow_gifs: settings.allow_gifs,
         join_questions: settings.join_questions,
         level_names: settings.level_names.map((n) => n ?? ''),
         icon: null as File | null,
@@ -93,6 +97,19 @@ export default function Settings({ community, settings, categories, media }: Set
                         <Checkbox checked={form.data.requires_approval} onCheckedChange={(v) => form.setData('requires_approval', v === true)} />
                         Admins must approve new members {form.data.privacy === 'private' && '(always on for private communities)'}
                     </label>
+
+                    <Field label="Attachments in posts">
+                        <div className="space-y-2">
+                            <label className="flex items-center gap-2 text-sm">
+                                <Checkbox checked={form.data.allow_images} onCheckedChange={(v) => form.setData('allow_images', v === true)} />
+                                Members can add photos (JPG, PNG, WebP, under 1 MB, up to 4 per post)
+                            </label>
+                            <label className="flex items-center gap-2 text-sm">
+                                <Checkbox checked={form.data.allow_gifs} onCheckedChange={(v) => form.setData('allow_gifs', v === true)} />
+                                Members can add GIFs (under 1 MB)
+                            </label>
+                        </div>
+                    </Field>
 
                     <Field label="Membership questions (up to 3)" error={form.errors.join_questions}>
                         <div className="space-y-2">

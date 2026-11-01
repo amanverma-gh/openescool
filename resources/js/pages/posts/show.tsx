@@ -108,6 +108,21 @@ export default function Show({ community, categories, post, comments, canComment
                                     <VideoEmbed src={video} title={post.title} />
                                 </div>
                             )}
+                            {post.attachments.length > 0 && (
+                                <div className={`mt-4 grid gap-2 ${post.attachments.length > 1 ? 'grid-cols-2' : ''}`}>
+                                    {post.attachments.map((a) => (
+                                        <a
+                                            key={a.path}
+                                            href={a.url}
+                                            target="_blank"
+                                            rel="noopener"
+                                            className="bg-muted block overflow-hidden rounded-lg border"
+                                        >
+                                            <img src={a.url} alt="" loading="lazy" className="max-h-[480px] w-full object-contain" />
+                                        </a>
+                                    ))}
+                                </div>
+                            )}
 
                             <footer className="mt-6 flex items-center gap-5 border-t pt-4 text-sm">
                                 <LikeButton
