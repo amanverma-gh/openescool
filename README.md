@@ -47,13 +47,16 @@ php artisan app:make-admin you@example.com
 
 | Feature | `.env` keys | Where to get them |
 | --- | --- | --- |
-| Email (Brevo SMTP) | `MAIL_MAILER=smtp`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS` | Brevo → SMTP & API → SMTP |
-| Brevo contact sync | `BREVO_API_KEY`, `BREVO_MEMBERS_LIST_ID` | Brevo → SMTP & API → API keys; Contacts → Lists |
+| Email (Brevo) | Set in the app: **Admin settings → Email (Brevo)** | Brevo → SMTP & API → API keys; verify the sender under Senders |
 | Google sign-in | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google Cloud Console → Credentials → OAuth client (redirect: `APP_URL/auth/google/callback`) |
 | Stripe | `STRIPE_KEY`, `STRIPE_SECRET`, `STRIPE_WEBHOOK_SECRET` | Stripe → Developers → API keys; Webhooks → endpoint signing secret |
 | Razorpay (INR, UPI) | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` | Razorpay → Account & Settings → API keys; Webhooks (you choose the secret) |
 
 Leave any of these empty to turn that feature off.
+
+**Email setup:** a platform admin pastes the Brevo API key, sender email and name (and optionally a members list ID) in **Admin settings**. The key is checked with Brevo, stored encrypted with `APP_KEY`, and from then on every email goes through the Brevo API (no SMTP login needed). Use **Send test email** to confirm. Until a key is saved, emails go to the log. `BREVO_API_KEY` / SMTP keys in `.env` still work as a fallback.
+
+On Windows, PHP often has no CA bundle, so HTTPS calls fail with cURL error 60. The app then uses the Windows certificate store automatically; Linux servers are not affected.
 
 
 ## Payments
@@ -79,6 +82,7 @@ To test webhooks on your own computer, use `stripe listen --forward-to localhost
 
 - **Digest:** members get a weekly summary by default (Monday 08:00): the most popular new posts in each of their communities and events coming up. They can switch to daily (08:00 every day) or off in Settings → Email. Times use the app timezone (`APP_TIMEZONE`). Nobody gets an empty digest, and a post is never sent twice.
 - **Activity emails** (comments, mentions, join requests, event reminders, level-ups) can each be turned off in Settings → Email. In-app notifications always arrive.
+- **Email a post to members:** when writing a post, owners and admins can tick **Email to all members** (like Skool). Every active member gets the full post by email; members can opt out under Settings → Email → "Posts that admins email to all members". A community can send one such email every 24 hours.
 - Every email has a signed unsubscribe link that works without logging in. Digests also send the `List-Unsubscribe` one-click header that Gmail and Yahoo require from bulk senders.
 - **About page:** a gallery of images and YouTube/Vimeo/Loom videos (Settings → About page gallery), star ratings and reviews from current members, each labelled with how long the reviewer has been a member and whether they still pay. Owners can hide abusive reviews; ratings also show on the Discover page.
 - Members get a notification when likes push them to a new level, along with any courses it unlocks. Owners can name each level (Settings → Level names); the names show on the leaderboard and on locked courses.
