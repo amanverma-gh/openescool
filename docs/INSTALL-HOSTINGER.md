@@ -81,7 +81,6 @@ The site runs as the `www-data` user, which also lets the one-click update work 
 mkdir -p /var/www && chown www-data:www-data /var/www
 cd /var/www
 sudo -u www-data git clone https://github.com/amanverma-gh/openescool.git
-# (While the repository is private, git asks for a GitHub username and a personal access token.)
 cd openescool
 sudo -u www-data cp .env.example .env
 ```
