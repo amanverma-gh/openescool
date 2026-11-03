@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>OpenEscool: your own community platform, open source</title>
+    <meta name="description" content="OpenEscool is an open-source community platform with courses, events, leaderboards, chat and paid memberships. Run unlimited communities on your own server, with no per-group fee.">
+    <meta property="og:title" content="OpenEscool: your own community platform">
+    <meta property="og:description" content="Unlimited communities on your own server. Courses, events, payments and chat. Open source.">
+    <meta property="og:type" content="website">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --brand: #4f46e5;
+            --brand-soft: #eef2ff;
+            --brand-ink: #3730a3;
+            --bg: #ffffff;
+            --bg-alt: #f7f7fb;
+            --card: #ffffff;
+            --text: #0f1020;
+            --muted: #5b5d72;
+            --line: #e6e6ef;
+            --good: #059669;
+            --bad: #b91c1c;
+            --shadow: 0 1px 2px rgba(15, 16, 32, .05), 0 12px 32px -12px rgba(15, 16, 32, .18);
+            --radius: 16px;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) {
+                --brand: #818cf8;
+                --brand-soft: #1e1b4b;
+                --brand-ink: #c7d2fe;
+                --bg: #0b0b12;
+                --bg-alt: #11111b;
+                --card: #161622;
+                --text: #f2f2f8;
+                --muted: #a3a4b8;
+                --line: #262636;
+                --good: #34d399;
+                --bad: #f87171;
+                --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 12px 32px -12px rgba(0, 0, 0, .6);
+            }
+        }
+        :root[data-theme="dark"] {
+            --brand: #818cf8; --brand-soft: #1e1b4b; --brand-ink: #c7d2fe; --bg: #0b0b12; --bg-alt: #11111b; --card: #161622;
+            --text: #f2f2f8; --muted: #a3a4b8; --line: #262636; --good: #34d399; --bad: #f87171;
+            --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 12px 32px -12px rgba(0, 0, 0, .6);
+        }
+
+        * { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font: 16px/1.6 "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        a { color: inherit; }
+        img { max-width: 100%; }
+        .wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+        .muted { color: var(--muted); }
+        h1, h2, h3 { line-height: 1.15; letter-spacing: -.02em; margin: 0; }
+        h2 { font-size: clamp(28px, 4vw, 40px); }
+        .eyebrow { color: var(--brand); font-weight: 600; font-size: 14px; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 10px; }
+        section { padding: 88px 0; }
+        .section-head { max-width: 680px; margin-bottom: 44px; }
+        .section-head p { font-size: 18px; margin: 14px 0 0; }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex; align-items: center; gap: 8px; justify-content: center;
+            padding: 12px 20px; border-radius: 12px; font-weight: 600; text-decoration: none;
+            border: 1px solid transparent; transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+            font-size: 15px; white-space: nowrap;
+        }
+        .btn:hover { transform: translateY(-1px); }
+        .btn-primary { background: var(--brand); color: #fff; box-shadow: 0 8px 24px -8px color-mix(in srgb, var(--brand) 70%, transparent); }
+        :root[data-theme="dark"] .btn-primary, .dark-btn-fix { color: #0b0b12; }
+        @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn-primary { color: #0b0b12; } }
+        .btn-ghost { border-color: var(--line); background: var(--card); }
+        .btn-lg { padding: 15px 24px; font-size: 16px; }
+        .note { font-size: 13px; color: var(--muted); }
+
+        /* Nav */
+        nav.top {
+            position: sticky; top: 0; z-index: 10;
+            background: color-mix(in srgb, var(--bg) 85%, transparent);
+            backdrop-filter: saturate(180%) blur(12px);
+            border-bottom: 1px solid var(--line);
+        }
+        nav.top .wrap { display: flex; align-items: center; gap: 24px; height: 64px; }
+        .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; text-decoration: none; }
+        .logo-mark {
+            width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center;
+            background: var(--brand); color: #fff; font-weight: 700;
+        }
+        .nav-links { display: flex; gap: 22px; margin-left: auto; font-size: 15px; }
+        .nav-links a { text-decoration: none; color: var(--muted); }
+        .nav-links a:hover { color: var(--text); }
+        .theme-toggle { background: none; border: 1px solid var(--line); color: var(--text); border-radius: 10px; width: 38px; height: 38px; cursor: pointer; font-size: 16px; }
+        @media (max-width: 860px) { .nav-links { display: none; } nav.top .btn { margin-left: auto; } }
+
+        /* Hero */
+        .hero { padding: 72px 0 40px; position: relative; overflow: hidden; }
+        .hero::before {
+            content: ""; position: absolute; inset: -40% -10% auto; height: 640px; z-index: -1;
+            background: radial-gradient(closest-side, color-mix(in srgb, var(--brand) 22%, transparent), transparent);
+        }
+        .hero-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 56px; align-items: center; }
+        .pill {
+            display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px;
+            background: var(--brand-soft); color: var(--brand-ink); font-size: 14px; font-weight: 500; margin-bottom: 20px;
+        }
+        .hero h1 { font-size: clamp(38px, 6vw, 64px); font-weight: 700; }
+        .hero h1 span { color: var(--brand); }
+        .hero p.lead { font-size: 19px; color: var(--muted); margin: 20px 0 30px; max-width: 560px; }
+        .hero-ctas { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+        .hero-points { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 26px; font-size: 14px; color: var(--muted); padding: 0; list-style: none; }
+        .hero-points li::before { content: "✓"; color: var(--good); font-weight: 700; margin-right: 6px; }
+        @media (max-width: 960px) { .hero-grid { grid-template-columns: 1fr; } }
+
+        /* Product mockup */
+        .mock { background: var(--card); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); overflow: hidden; }
+        .mock-bar { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--line); font-weight: 600; font-size: 14px; }
+        .mock-bar .dot { width: 26px; height: 26px; border-radius: 8px; background: linear-gradient(135deg, #a78bfa, var(--brand)); color: #fff; display: grid; place-items: center; font-size: 13px; }
+        .mock-tabs { display: flex; gap: 16px; padding: 0 16px; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--muted); overflow: hidden; }
+        .mock-tabs span { padding: 10px 0; }
+        .mock-tabs .on { color: var(--text); border-bottom: 2px solid var(--text); font-weight: 600; }
+        .mock-body { padding: 16px; display: grid; gap: 12px; background: var(--bg-alt); }
+        .post { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+        .post-head { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+        .avatar { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 600; font-size: 13px; position: relative; flex-shrink: 0; }
+        .avatar i { position: absolute; right: -3px; bottom: -3px; background: var(--brand); color: #fff; font-style: normal; font-size: 9px; width: 15px; height: 15px; border-radius: 50%; display: grid; place-items: center; border: 2px solid var(--card); }
+        .post h4 { margin: 10px 0 4px; font-size: 15px; }
+        .post p { margin: 0; font-size: 13px; color: var(--muted); }
+        .post-foot { display: flex; gap: 16px; margin-top: 10px; font-size: 12px; color: var(--muted); }
+        .tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--brand-soft); color: var(--brand-ink); margin-left: auto; }
+        .lesson { display: flex; align-items: center; gap: 12px; }
+        .lesson .bar { flex: 1; height: 6px; background: var(--line); border-radius: 999px; overflow: hidden; }
+        .lesson .bar b { display: block; height: 100%; width: 68%; background: var(--good); border-radius: 999px; }
+
+        /* Stats strip */
+        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 64px; }
+        .stat { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+        .stat b { display: block; font-size: 28px; letter-spacing: -.02em; }
+        .stat span { color: var(--muted); font-size: 14px; }
+        @media (max-width: 760px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+
+        /* Why */
+        .alt { background: var(--bg-alt); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+        .why-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .why { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px; }
+        .why .icon { font-size: 26px; width: 52px; height: 52px; display: grid; place-items: center; background: var(--brand-soft); border-radius: 14px; margin-bottom: 18px; }
+        .why h3 { font-size: 20px; margin-bottom: 10px; }
+        .why p { margin: 0; color: var(--muted); }
+        @media (max-width: 900px) { .why-grid { grid-template-columns: 1fr; } }
+
+        /* Calculator */
+        .calc { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: stretch; }
+        .calc-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px; }
+        .calc label { display: block; font-weight: 600; margin-bottom: 8px; }
+        .calc input[type="range"] { width: 100%; accent-color: var(--brand); }
+        .calc input[type="number"] { width: 110px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--text); font: inherit; }
+        .calc .row { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 0; border-bottom: 1px dashed var(--line); }
+        .calc .row:last-child { border-bottom: 0; }
+        .calc .big { font-size: 30px; font-weight: 700; letter-spacing: -.02em; }
+        .calc .save { color: var(--good); }
+        .count { font-size: 44px; font-weight: 700; color: var(--brand); line-height: 1; }
+        @media (max-width: 860px) { .calc { grid-template-columns: 1fr; } }
+
+        /* Features */
+        .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+        .feature { border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; background: var(--card); }
+        .feature h3 { font-size: 17px; display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+        .feature ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 15px; }
+        .feature li { margin: 4px 0; }
+        .feature li strong { color: var(--text); font-weight: 600; }
+        @media (max-width: 960px) { .feature-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 640px) { .feature-grid { grid-template-columns: 1fr; } }
+
+        /* Compare */
+        .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); }
+        table { width: 100%; border-collapse: collapse; min-width: 640px; font-size: 15px; }
+        th, td { text-align: left; padding: 14px 18px; border-bottom: 1px solid var(--line); vertical-align: top; }
+        tr:last-child td { border-bottom: 0; }
+        thead th { font-size: 14px; color: var(--muted); font-weight: 600; background: var(--bg-alt); }
+        thead th.us { color: var(--brand); }
+        td.us { background: color-mix(in srgb, var(--brand-soft) 55%, transparent); font-weight: 500; }
+        .yes::before { content: "✓ "; color: var(--good); font-weight: 700; }
+        .no::before { content: "✕ "; color: var(--bad); font-weight: 700; }
+        .fine { font-size: 13px; color: var(--muted); margin-top: 14px; }
+
+        /* Install */
+        .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; counter-reset: step; }
+        .step { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; position: relative; }
+        .step::before {
+            counter-increment: step; content: counter(step);
+            width: 34px; height: 34px; border-radius: 10px; background: var(--brand); color: #fff; font-weight: 700;
+            display: grid; place-items: center; margin-bottom: 14px;
+        }
+        .step h3 { font-size: 17px; margin-bottom: 8px; }
+        .step p { margin: 0; color: var(--muted); font-size: 15px; }
+        .step code, .code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; background: var(--bg-alt); border: 1px solid var(--line); padding: 2px 6px; border-radius: 6px; }
+        @media (max-width: 960px) { .steps { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 560px) { .steps { grid-template-columns: 1fr; } }
+        .cta-box {
+            margin-top: 36px; border-radius: 22px; padding: 36px; display: flex; flex-wrap: wrap; gap: 24px; align-items: center; justify-content: space-between;
+            background: linear-gradient(135deg, var(--brand), #7c3aed); color: #fff;
+        }
+        .cta-box h3 { font-size: 26px; }
+        .cta-box p { margin: 8px 0 0; opacity: .9; }
+        .cta-box .btn { background: #fff; color: #1e1b4b; }
+        .cta-box .note { color: rgba(255, 255, 255, .8); margin-top: 10px; }
+
+        /* FAQ */
+        .faq { max-width: 800px; }
+        details { border-bottom: 1px solid var(--line); padding: 18px 0; }
+        summary { cursor: pointer; font-weight: 600; font-size: 17px; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+        summary::-webkit-details-marker { display: none; }
+        summary::after { content: "+"; color: var(--muted); font-size: 22px; line-height: 1; }
+        details[open] summary::after { content: "–"; }
+        details p { color: var(--muted); margin: 12px 0 0; }
+
+        footer { border-top: 1px solid var(--line); padding: 40px 0 56px; font-size: 14px; color: var(--muted); }
+        footer .wrap { display: flex; flex-wrap: wrap; gap: 20px 40px; justify-content: space-between; }
+        footer nav { display: flex; flex-wrap: wrap; gap: 18px; }
+        footer a { text-decoration: none; }
+        footer a:hover { color: var(--text); }
+        .disclaimer { flex-basis: 100%; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+<nav class="top" aria-label="Main">
+    <div class="wrap">
+        <a class="logo" href="#"><span class="logo-mark">O</span> OpenEscool</a>
+        <div class="nav-links">
+            <a href="#why">Why</a>
+            <a href="#features">Features</a>
+            <a href="#compare">Compare</a>
+            <a href="#install">Install</a>
+            <a href="#faq">FAQ</a>
+            <a href="https://github.com/amanverma-gh/openescool" target="_blank" rel="noopener">GitHub</a>
+        </div>
+        <button class="theme-toggle" type="button" id="theme" aria-label="Switch light or dark mode">◐</button>
+        <a class="btn btn-primary" href="#install">Install free</a>
+    </div>
+</nav>
+
+<header class="hero">
+    <div class="wrap hero-grid">
+        <div>
+            <div class="pill">✨ Open source · MIT licence</div>
+            <h1>Your community platform. <span>Your server.</span> Unlimited groups.</h1>
+            <p class="lead">
+                OpenEscool gives you a feed, courses, events, leaderboards, chat and paid memberships under your own name and domain.
+                Install it once, run as many communities as you want, and never pay a per-group fee again.
+            </p>
+            <div class="hero-ctas">
+                <a class="btn btn-primary btn-lg" href="https://www.hostg.xyz/aff_c?offer_id=6&aff_id=67383&url_id=3039" target="_blank" rel="sponsored noopener">Install on Hostinger VPS →</a>
+                <a class="btn btn-ghost btn-lg" href="https://github.com/amanverma-gh/openescool" target="_blank" rel="noopener">View on GitHub</a>
+            </div>
+            <p class="note" style="margin-top:12px">The Hostinger link is an affiliate link: it supports OpenEscool at no extra cost to you.</p>
+            <ul class="hero-points">
+                <li>No platform fee on sales</li>
+                <li>Stripe + Razorpay (UPI)</li>
+                <li>Your data, your rules</li>
+            </ul>
+        </div>
+
+        <div class="mock" aria-hidden="true">
+            <div class="mock-bar"><span class="dot">C</span> Creator Academy <span class="tag">You own this</span></div>
+            <div class="mock-tabs"><span class="on">Community</span><span>Classroom</span><span>Calendar</span><span>Members</span><span>Leaderboards</span></div>
+            <div class="mock-body">
+                <div class="post">
+                    <div class="post-head">
+                        <span class="avatar" style="background:#6366f1">AV<i>7</i></span>
+                        <div><b>Aman</b> <span class="muted">· 2h · Announcements</span></div>
+                        <span class="tag">📌 Pinned</span>
+                    </div>
+                    <h4>Live Q&amp;A this Friday 🎉</h4>
+                    <p>Bring your questions about growing your first 100 members. Replay goes in the Classroom.</p>
+                    <div class="post-foot"><span>👍 48</span><span>💬 23 comments</span><span>✉️ Emailed to members</span></div>
+                </div>
+                <div class="post">
+                    <div class="post-head">
+                        <span class="avatar" style="background:#10b981">PS<i>4</i></span>
+                        <div><b>Priya</b> <span class="muted">· 5h · Wins</span></div>
+                    </div>
+                    <h4>Just made my first sale! 🚀</h4>
+                    <p>Thanks to Module 3, my offer page finally clicked.</p>
+                    <div class="post-foot"><span>👍 31</span><span>💬 12 comments</span></div>
+                </div>
+                <div class="post lesson">
+                    <span>🎓</span>
+                    <div style="flex:1">
+                        <div style="font-size:13px;font-weight:600;margin-bottom:6px">Growth Masterclass · 68% complete</div>
+                        <div class="bar"><b></b></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="wrap">
+        <div class="stats">
+            <div class="stat"><b>∞</b><span>communities on one server</span></div>
+            <div class="stat"><b>$0</b><span>platform fee on your sales</span></div>
+            <div class="stat"><b>100%</b><span>your data and members</span></div>
+            <div class="stat"><b>~30 min</b><span>to install on a VPS</span></div>
+        </div>
+    </div>
+</header>
+
+<section id="why" class="alt">
+    <div class="wrap">
+        <div class="section-head">
+            <div class="eyebrow">Why OpenEscool</div>
+            <h2>Built for creators who want to own their community</h2>
+            <p class="muted">Hosted platforms rent you a corner of their app. OpenEscool gives you the whole building.</p>
+        </div>
+        <div class="why-grid">
+            <div class="why">
+                <div class="icon">♾️</div>
+                <h3>Unlimited communities, one price</h3>
+                <p>Hosted platforms charge per community. With OpenEscool you pay only for your server, so a second, fifth or fiftieth community costs nothing extra.</p>
+            </div>
+            <div class="why">
+                <div class="icon">🛡️</div>
+                <h3>No competition inside your platform</h3>
+                <p>Your members never see other creators' groups. They can only discover, join and switch between <strong>your</strong> communities, and members can't DM each other, so nobody can quietly pull them away.</p>
+            </div>
+            <div class="why">
+                <div class="icon">🔑</div>
+                <h3>Your brand, your data</h3>
+                <p>Your domain, name and logo everywhere. Your own database, your own email list in Brevo, and the full source code to change anything you like.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="savings">
+    <div class="wrap">
+        <div class="section-head">
+            <div class="eyebrow">Do the maths</div>
+            <h2>How much would you save?</h2>
+            <p class="muted">Compared with a hosted plan at $99 per month for each community (Skool's Pro plan price at the time of writing).</p>
+        </div>
+        <div class="calc">
+            <div class="calc-card">
+                <label for="groups">How many communities do you run?</label>
+                <div class="count" id="groupsOut">3</div>
+                <input type="range" id="groups" min="1" max="20" value="3">
+                <div style="margin-top:22px">
+                    <label for="vps">Your server price per month (USD)</label>
+                    <input type="number" id="vps" min="0" step="1" value="10">
+                    <p class="note">Check the current price on <a href="https://www.hostg.xyz/aff_c?offer_id=6&aff_id=67383&url_id=3039" target="_blank" rel="sponsored noopener">Hostinger</a> (affiliate link).</p>
+                </div>
+            </div>
+            <div class="calc-card">
+                <div class="row"><span>Hosted, per community</span><span class="big" id="hosted">$297</span></div>
+                <div class="row"><span>OpenEscool on your VPS</span><span class="big" id="ours">$10</span></div>
+                <div class="row"><span><strong>You save every year</strong></span><span class="big save" id="saved">$3,444</span></div>
+                <p class="note">Payment gateway fees (Stripe, Razorpay) apply either way. OpenEscool adds no fee of its own.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="features" class="alt">
+    <div class="wrap">
+        <div class="section-head">
+            <div class="eyebrow">Features</div>
+            <h2>Everything a paid community needs</h2>
+            <p class="muted">And a few things the big platforms don't offer.</p>
+        </div>
+        <div class="feature-grid">
+            <div class="feature">
+                <h3>💬 Community</h3>
+                <ul>
+                    <li>Feed with categories, pins, likes, replies, @mentions</li>
+                    <li>Photos and GIFs in posts and comments</li>
+                    <li><strong>Email a post to all members</strong> in one click</li>
+                    <li>Search, members directory, online status</li>
+                    <li>About page with gallery, ratings and reviews</li>
+                </ul>
+            </div>
+            <div class="feature">
+                <h3>🎓 Courses</h3>
+                <ul>
+                    <li>Courses, modules, lessons and progress</li>
+                    <li>YouTube, Vimeo, Loom, <strong>or upload your own video</strong></li>
+                    <li><strong>Private downloadable files</strong>: PDF, docs, ZIP, MP3</li>
+                    <li>Unlock courses by level or payment</li>
+                </ul>
+            </div>
+            <div class="feature">
+                <h3>💳 Payments</h3>
+                <ul>
+                    <li>Monthly, yearly and one-time plans</li>
+                    <li><strong>Stripe</strong> worldwide + <strong>Razorpay with UPI</strong> for India</li>
+                    <li>8 currencies including INR</li>
+                    <li>Revenue dashboard, receipts, grace period</li>
+                </ul>
+            </div>
+            <div class="feature">
+                <h3>🏆 Gamification</h3>
+                <ul>
+                    <li>Points, 9 levels with your own names</li>
+                    <li>7-day, 30-day and all-time leaderboards</li>
+                    <li>Level-up rewards that unlock courses</li>
+                </ul>
+            </div>
+            <div class="feature">
+                <h3>📅 Events and email</h3>
+                <ul>
+                    <li>One-off and weekly events, reminders, .ics</li>
+                    <li>Daily or weekly digest of top posts</li>
+                    <li>Per-type email settings, one-click unsubscribe</li>
+                    <li>Sent through Brevo with just an API key</li>
+                </ul>
+            </div>
+            <div class="feature">
+                <h3>🛡️ Team and safety</h3>
+                <ul>
+                    <li>Owner, admin and moderator roles</li>
+                    <li><strong>Chat only with your team</strong>: no member poaching</li>
+                    <li>Automatic spam detection and review queue</li>
+                    <li>Rate limits, reports, bans</li>
+                </ul>
+            </div>
+            <div class="feature">
+                <h3>🎨 Your brand</h3>
+                <ul>
+                    <li>Your domain, site name and logo</li>
+                    <li>Home page: one community, or your own Discover page</li>
+                    <li>Featured communities in the order you choose</li>
+                </ul>
+            </div>
+            <div class="feature">
+                <h3>🔎 SEO control</h3>
+                <ul>
+                    <li>Search engines on or off for the whole site</li>
+                    <li><strong>Per community, and per community's posts</strong></li>
+                    <li>Automatic sitemap.xml and robots.txt</li>
+                </ul>
+            </div>
+            <div class="feature">
+                <h3>⚙️ Admin and updates</h3>
+                <ul>
+                    <li>All keys set inside the app, stored encrypted</li>
+                    <li>Upload limits for photos, files and videos</li>
+                    <li>Update notice, one command or one click to update</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="compare">
+    <div class="wrap">
+        <div class="section-head">
+            <div class="eyebrow">Compare</div>
+            <h2>OpenEscool vs Skool</h2>
+            <p class="muted">Same core features. Very different ownership.</p>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th></th><th class="us">OpenEscool</th><th>Skool</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Price</td><td class="us">Free and open source; you pay only for hosting</td><td>$99/month per group on the Pro plan*</td></tr>
+                    <tr><td>Number of communities</td><td class="us yes">Unlimited on one server</td><td>Each group billed separately*</td></tr>
+                    <tr><td>Platform fee on your sales</td><td class="us yes">None</td><td>Transaction fee on each sale*</td></tr>
+                    <tr><td>Other creators' groups shown to your members</td><td class="us yes">Never</td><td class="no">Listed on Skool's public Discovery page*</td></tr>
+                    <tr><td>Your own domain, name and logo</td><td class="us yes">Yes</td><td class="no">Runs on skool.com*</td></tr>
+                    <tr><td>Own and move your data</td><td class="us yes">Your own database</td><td>Hosted by Skool</td></tr>
+                    <tr><td>Change the code, add features</td><td class="us yes">Yes</td><td class="no">No</td></tr>
+                    <tr><td>Razorpay and UPI for India</td><td class="us yes">Yes</td><td class="no">Not offered*</td></tr>
+                    <tr><td>SEO per community and per post</td><td class="us yes">Yes</td><td class="no">Not offered*</td></tr>
+                    <tr><td>Member-to-member DMs</td><td class="us yes">Off: chat with your team only</td><td>On by default*</td></tr>
+                    <tr><td>Courses, events, levels, leaderboards</td><td class="us yes">Yes</td><td class="yes">Yes</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="fine">* Based on Skool's public website and plans at the time of writing; they may change. Check skool.com for the latest. Skool is a trademark of its owner. OpenEscool is an independent open-source project and is not affiliated with, endorsed by, or sponsored by Skool.</p>
+    </div>
+</section>
+
+<section id="install" class="alt">
+    <div class="wrap">
+        <div class="section-head">
+            <div class="eyebrow">Install</div>
+            <h2>Live in about 30 minutes</h2>
+            <p class="muted">Copy-and-paste steps. No coding needed.</p>
+        </div>
+        <div class="steps">
+            <div class="step">
+                <h3>Get a VPS</h3>
+                <p>A Hostinger <strong>KVM 1</strong> is enough to start. Choose <strong>Ubuntu 24.04</strong> and point your domain at it.</p>
+            </div>
+            <div class="step">
+                <h3>Install the software</h3>
+                <p>PHP, MySQL, Nginx and Node with one command block from the guide.</p>
+            </div>
+            <div class="step">
+                <h3>Download OpenEscool</h3>
+                <p><code>git clone</code>, fill in <code>.env</code>, and run the setup commands.</p>
+            </div>
+            <div class="step">
+                <h3>Sign up and go</h3>
+                <p>Free SSL, then sign up: <strong>the first account becomes the admin</strong>. Create your community.</p>
+            </div>
+        </div>
+
+        <div class="cta-box">
+            <div>
+                <h3>Ready to own your community?</h3>
+                <p>Get a Hostinger VPS and follow the step-by-step guide.</p>
+                <p class="note">Affiliate link: it supports OpenEscool at no extra cost to you.</p>
+            </div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap">
+                <a class="btn btn-lg" href="https://www.hostg.xyz/aff_c?offer_id=6&aff_id=67383&url_id=3039" target="_blank" rel="sponsored noopener">Get Hostinger VPS →</a>
+                <a class="btn btn-lg" style="background:transparent;color:#fff;border-color:rgba(255,255,255,.5)" href="https://github.com/amanverma-gh/openescool/blob/main/docs/INSTALL-HOSTINGER.md" target="_blank" rel="noopener">Read the install guide</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="faq">
+    <div class="wrap">
+        <div class="section-head">
+            <div class="eyebrow">FAQ</div>
+            <h2>Questions</h2>
+        </div>
+        <div class="faq">
+            <details>
+                <summary>Is OpenEscool really free?</summary>
+                <p>Yes. It's open source under the MIT licence. You pay only for your server and domain, plus the normal fees of Stripe or Razorpay when members pay you.</p>
+            </details>
+            <details>
+                <summary>Do I need to know how to code?</summary>
+                <p>No. The install guide is copy and paste. After that, everything (email keys, branding, home page, upload limits, SEO) is set inside the app's Admin settings.</p>
+            </details>
+            <details>
+                <summary>How many communities and members can I have?</summary>
+                <p>As many as your server can handle; OpenEscool has no limits. A small VPS is fine for most creators; move to a bigger plan as you grow.</p>
+            </details>
+            <details>
+                <summary>How do I get updates?</summary>
+                <p>Admin settings shows when a new version is out. Back up, then run <span class="code">php artisan app:update</span> on your server, or use the one-click button.</p>
+            </details>
+            <details>
+                <summary>Can my members see other people's communities?</summary>
+                <p>Only communities on your own install, and you decide which ones show on the home page. You can even make the home page open your main community directly.</p>
+            </details>
+            <details>
+                <summary>Where do I get help?</summary>
+                <p>Post questions, bugs and ideas at <a href="https://openescool.userjot.com/" target="_blank" rel="noopener">openescool.userjot.com</a>.</p>
+            </details>
+        </div>
+    </div>
+</section>
+
+<footer>
+    <div class="wrap">
+        <div>
+            <a class="logo" href="#"><span class="logo-mark">O</span> OpenEscool</a>
+            <p style="margin:10px 0 0">The open-source community platform you own.</p>
+        </div>
+        <nav aria-label="Footer">
+            <a href="https://github.com/amanverma-gh/openescool" target="_blank" rel="noopener">GitHub</a>
+            <a href="https://github.com/amanverma-gh/openescool/blob/main/docs/INSTALL-HOSTINGER.md" target="_blank" rel="noopener">Install guide</a>
+            <a href="https://openescool.userjot.com/" target="_blank" rel="noopener">Help</a>
+            <a href="https://www.hostg.xyz/aff_c?offer_id=6&aff_id=67383&url_id=3039" target="_blank" rel="sponsored noopener">Hostinger VPS (affiliate)</a>
+        </nav>
+        <p class="disclaimer">© 2026 OpenEscool. MIT licence. Skool is a trademark of its owner; OpenEscool is not affiliated with Skool. Some links are affiliate links.</p>
+    </div>
+</footer>
+
+<script>
+    // Savings calculator
+    const groups = document.getElementById('groups');
+    const vps = document.getElementById('vps');
+    const money = (n) => '$' + Math.round(n).toLocaleString('en-US');
+    function update() {
+        const n = Number(groups.value);
+        const server = Math.max(0, Number(vps.value) || 0);
+        document.getElementById('groupsOut').textContent = n;
+        document.getElementById('hosted').textContent = money(n * 99) + '/mo';
+        document.getElementById('ours').textContent = money(server) + '/mo';
+        document.getElementById('saved').textContent = money(Math.max(0, (n * 99 - server) * 12));
+    }
+    groups.addEventListener('input', update);
+    vps.addEventListener('input', update);
+    update();
+
+    // Light / dark toggle (remembered on this device)
+    const root = document.documentElement;
+    try { const saved = localStorage.getItem('theme'); if (saved) root.dataset.theme = saved; } catch (e) {}
+    document.getElementById('theme').addEventListener('click', () => {
+        const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+        root.dataset.theme = dark ? 'light' : 'dark';
+        try { localStorage.setItem('theme', root.dataset.theme); } catch (e) {}
+    });
+</script>
+</body>
+</html>
