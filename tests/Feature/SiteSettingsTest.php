@@ -148,7 +148,7 @@ class SiteSettingsTest extends TestCase
             ->where('update.current', config('openescool.version'))
             ->where('update.latest', '1.1.0')
             ->where('update.available', true)
-            ->where('helpUrl', 'https://openskoool.userjot.com/'));
+            ->where('helpUrl', 'https://openescool.userjot.com/'));
 
         $this->actingAs($this->admin)->post(route('admin.update.run'), [])->assertSessionHasErrors('backup_confirmed');
         $this->actingAs($this->admin)->getJson(route('admin.update.status'))->assertOk()->assertJsonStructure(['running', 'ok', 'step', 'log']);

@@ -104,7 +104,7 @@ In **Settings → Team**, search a member and click **Make moderator** (or **Mak
 - **Site name and logo:** shown in the top bar, sign-in pages, browser tabs and emails.
 - **Home page:** open one community (visitors see its About page, members its feed) or show the Discover page, with your own heading, text, button and a choice of communities. `/discover` always lists communities.
 - **Search engines (SEO):** one switch for the whole site, then per community (Settings → Search engines) whether the community and its posts may be indexed. Private communities and personal pages are never indexed. `/robots.txt` and `/sitemap.xml` follow these settings.
-- **Need help?** links to https://openskoool.userjot.com/.
+- **Need help?** links to https://openescool.userjot.com/.
 
 ## Updating
 

@@ -12,6 +12,6 @@ return [
     'repository' => env('OPENESCOOL_REPOSITORY', 'amanverma-gh/openescool'),
 
     // Where site admins go for help with OpenEscool itself.
-    'help_url' => 'https://openskoool.userjot.com/',
+    'help_url' => 'https://openescool.userjot.com/',
 
 ];
