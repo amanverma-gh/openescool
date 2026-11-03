@@ -1,6 +1,6 @@
-# OpenGuild
+# OpenEscool
 
-An open-source community platform: feed, members, levels and leaderboards, with
+An open-source community platform (an alternative to Skool): feed, members, levels and leaderboards, with
 courses, events and paid memberships on the way. Built with Laravel 12, Inertia,
 React and Tailwind. Email goes through Brevo, and payments will use Stripe and Razorpay.
 
@@ -37,7 +37,7 @@ Run the tests with `php artisan test`.
 
 ## Who can create communities
 
-Only platform admins can create communities. Promote a user after they register:
+Only platform admins can create communities. The first person to sign up becomes an admin; promote others after they register:
 
 ```bash
 php artisan app:make-admin you@example.com
@@ -97,6 +97,26 @@ Send a digest by hand with `php artisan app:send-digests weekly`.
 ## Team
 
 In **Settings → Team**, search a member and click **Make moderator** (or **Make admin**, owner only). Change or remove a role there, or with the role dropdown on the Members page.
+
+## Site settings (Admin settings)
+
+- **First admin:** on a fresh install, the first person to sign up becomes the platform admin. Later sign-ups are normal members (promote more with `php artisan app:make-admin you@example.com`).
+- **Site name and logo:** shown in the top bar, sign-in pages, browser tabs and emails.
+- **Home page:** open one community (visitors see its About page, members its feed) or show the Discover page, with your own heading, text, button and a choice of communities. `/discover` always lists communities.
+- **Search engines (SEO):** one switch for the whole site, then per community (Settings → Search engines) whether the community and its posts may be indexed. Private communities and personal pages are never indexed. `/robots.txt` and `/sitemap.xml` follow these settings.
+- **Need help?** links to https://openskoool.userjot.com/.
+
+## Updating
+
+Back up your database and files first. Then, in the site folder on your server:
+
+```bash
+php artisan app:update
+```
+
+It runs `git pull`, `composer install`, `php artisan migrate`, `npm ci && npm run build`, clears caches and restarts the queue, with a short maintenance page meanwhile. Admin settings → Updates shows when a new GitHub release is out, and has a one-click button that runs the same command (it asks you to confirm you have a backup; the command line is the safer way).
+
+Releasing a new version: bump `version` in `config/openescool.php`, push, and publish a GitHub release tagged `v<version>` with notes.
 
 ## Search and chat
 

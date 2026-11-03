@@ -1,4 +1,5 @@
 import { UserAvatar } from '@/components/community/user-avatar';
+import { SiteLogo } from '@/components/site-logo';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -71,13 +72,7 @@ export function TopBar({ current }: { current?: CommunityLink }) {
             <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4">
                 <DropdownMenu>
                     <DropdownMenuTrigger className="hover:bg-accent -ml-2 flex min-w-0 items-center gap-2 rounded-lg px-2 py-1.5 text-left">
-                        {current ? (
-                            <CommunityIcon community={current} />
-                        ) : (
-                            <span className="bg-foreground text-background flex size-8 items-center justify-center rounded-lg text-sm font-bold">
-                                {name.charAt(0)}
-                            </span>
-                        )}
+                        {current ? <CommunityIcon community={current} /> : <SiteLogo />}
                         <span className="truncate text-base font-semibold">{current?.name ?? name}</span>
                         <ChevronsUpDown className="text-muted-foreground size-4 shrink-0" />
                     </DropdownMenuTrigger>
@@ -97,7 +92,7 @@ export function TopBar({ current }: { current?: CommunityLink }) {
                             </>
                         )}
                         <DropdownMenuItem asChild>
-                            <Link href={route('home')}>
+                            <Link href={route('discover')}>
                                 <Compass className="mr-2" /> Discover communities
                             </Link>
                         </DropdownMenuItem>

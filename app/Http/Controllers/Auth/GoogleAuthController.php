@@ -47,6 +47,7 @@ class GoogleAuthController extends Controller
                 'avatar_path' => $google->getAvatar(),
             ]);
             $user->forceFill(['email_verified_at' => now()])->save();
+            $user->makeAdminIfFirst();
 
             event(new Registered($user));
             $user->notify(new Welcome);

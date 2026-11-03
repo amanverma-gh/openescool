@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AppSetting;
 use App\Models\Community;
 use App\Models\CommunityMember;
 use App\Models\Review;
@@ -18,7 +19,25 @@ use Inertia\Response;
 class CommunityController extends Controller
 {
     /**
+     * The site's front page: a default community (set in Admin settings) or
+     * the Discover page.
+     */
+    public function home(Request $request): Response|RedirectResponse
+    {
+        if (AppSetting::get('home_mode') === 'community'
+            && $community = Community::find(AppSetting::get('home_community_id'))) {
+            // Members land on the feed; everyone else on the About page, where they can join.
+            return $community->membershipFor($request->user())?->isActive()
+                ? to_route('communities.feed', $community)
+                : to_route('communities.about', $community);
+        }
+
+        return $this->index($request);
+    }
+
+    /**
      * Discovery page: the signed-in user's communities plus public ones.
+     * The text and which communities show are set in Admin settings.
      */
     public function index(Request $request): Response
     {
@@ -31,20 +50,46 @@ class CommunityController extends Controller
                 ->orderBy('name')->get()
             : collect();
 
-        $discover = Community::query()
+        $home = self::homeSettings();
+        $featured = $home['community_ids'];
+
+        $discover = ! $home['show_communities'] ? collect() : Community::query()
             ->where('privacy', Community::PRIVACY_PUBLIC)
             ->withAvg(['reviews as rating_avg' => fn ($q) => $q->visible()], 'rating')
             ->withCount(['reviews as rating_count' => fn ($q) => $q->visible()])
             ->whereNotIn('id', $mine->pluck('id'))
+            ->when($featured, fn ($q) => $q->whereIn('id', $featured))
             ->orderByDesc('members_count')
             ->limit(30)
-            ->get();
+            ->get()
+            // Picked communities show in the order the admin chose them.
+            ->when($featured, fn ($list) => $list->sortBy(fn (Community $c) => array_search($c->id, $featured))->values());
 
         return Inertia::render('communities/index', [
             'mine' => $mine->map(fn (Community $c) => $this->card($c)),
             'discover' => $discover->map(fn (Community $c) => $this->card($c)),
             'canCreate' => (bool) $user?->can('create', Community::class),
+            'hero' => collect($home)->only(['headline', 'subtext', 'button', 'communities_title'])->all(),
         ]);
+    }
+
+    /**
+     * Discover page text and options from Admin settings, with defaults.
+     *
+     * @return array{mode: string, community_id: int|null, headline: string, subtext: string, button: string, show_communities: bool, communities_title: string, community_ids: list<int>}
+     */
+    public static function homeSettings(): array
+    {
+        return [
+            'mode' => AppSetting::get('home_mode', 'discover'),
+            'community_id' => ($id = AppSetting::get('home_community_id')) ? (int) $id : null,
+            'headline' => AppSetting::get('home_headline', 'Learn and grow, together.'),
+            'subtext' => AppSetting::get('home_subtext', config('app.name').' brings your community, courses and events into one simple place.'),
+            'button' => AppSetting::get('home_button', 'Get started'),
+            'show_communities' => AppSetting::flag('home_show_communities', true),
+            'communities_title' => AppSetting::get('home_communities_title', 'Discover communities'),
+            'community_ids' => array_map('intval', json_decode(AppSetting::get('home_community_ids', '[]'), true) ?: []),
+        ];
     }
 
     /**

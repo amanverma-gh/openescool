@@ -6,6 +6,7 @@ use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Key/value settings a platform admin manages in the app. Keys listed in
@@ -72,6 +73,21 @@ class AppSetting extends Model
         return filled($value) ? $value : $default;
     }
 
+    /**
+     * An on/off setting, stored as "1" or "0".
+     */
+    public static function flag(string $key, bool $default = false): bool
+    {
+        return static::get($key, $default ? '1' : '0') === '1';
+    }
+
+    public static function logoUrl(): ?string
+    {
+        $path = static::get('site_logo');
+
+        return $path ? Storage::disk('public')->url($path) : null;
+    }
+
     public static function put(string $key, ?string $value): void
     {
         if (blank($value)) {
@@ -96,8 +112,13 @@ class AppSetting extends Model
             $fromAddress = static::get('mail_from_address');
             $fromName = static::get('mail_from_name');
             $listId = static::get('brevo_members_list_id');
+            $siteName = static::get('site_name');
         } catch (\Throwable) {
             return; // no database or table yet
+        }
+
+        if ($siteName) {
+            config(['app.name' => $siteName]);
         }
 
         if ($brevoKey) {

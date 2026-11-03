@@ -14,8 +14,15 @@ type Card = CommunityLink & {
     rating: { average: number; count: number } | null;
 };
 
-export default function Index({ mine, discover, canCreate }: { mine: Card[]; discover: Card[]; canCreate: boolean }) {
-    const { auth, name } = usePage<SharedData>().props;
+interface Hero {
+    headline: string;
+    subtext: string;
+    button: string;
+    communities_title: string;
+}
+
+export default function Index({ mine, discover, canCreate, hero }: { mine: Card[]; discover: Card[]; canCreate: boolean; hero: Hero }) {
+    const { auth } = usePage<SharedData>().props;
 
     return (
         <AppLayout>
@@ -23,13 +30,11 @@ export default function Index({ mine, discover, canCreate }: { mine: Card[]; dis
 
             {!auth.user && (
                 <section className="py-10 text-center">
-                    <h1 className="text-3xl font-bold tracking-tight sm:text-5xl">Learn and grow, together.</h1>
-                    <p className="text-muted-foreground mx-auto mt-4 max-w-xl text-lg">
-                        {name} brings your community, courses and events into one simple place.
-                    </p>
+                    <h1 className="text-3xl font-bold tracking-tight sm:text-5xl">{hero.headline}</h1>
+                    <p className="text-muted-foreground mx-auto mt-4 max-w-xl text-lg">{hero.subtext}</p>
                     <div className="mt-6 flex justify-center gap-3">
                         <Button size="lg" asChild>
-                            <Link href={route('register')}>Get started</Link>
+                            <Link href={route('register')}>{hero.button}</Link>
                         </Button>
                         <Button size="lg" variant="outline" asChild>
                             <Link href={route('login')}>Log in</Link>
@@ -40,7 +45,7 @@ export default function Index({ mine, discover, canCreate }: { mine: Card[]; dis
 
             {mine.length > 0 && <Section title="Your communities" communities={mine} />}
 
-            {discover.length > 0 && <Section title="Discover communities" communities={discover} />}
+            {discover.length > 0 && <Section title={hero.communities_title} communities={discover} />}
 
             {mine.length === 0 && discover.length === 0 && (
                 <div className="bg-card text-muted-foreground rounded-xl border p-10 text-center">

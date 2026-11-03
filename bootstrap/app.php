@@ -25,6 +25,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // Webhooks and one-click unsubscribe arrive without a CSRF token; they are signature-verified instead.
         $middleware->validateCsrfTokens(except: ['webhooks/*', 'email/unsubscribe/*']);
 
+        // During an update the admin page keeps polling its progress.
+        $middleware->preventRequestsDuringMaintenance(except: ['admin/update/status']);
+
         // Hostinger and most hosts sit behind a proxy/load balancer.
         $middleware->trustProxies(at: '*');
     })

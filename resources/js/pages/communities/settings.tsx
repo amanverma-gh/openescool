@@ -25,18 +25,31 @@ interface SettingsProps {
         allow_images: boolean;
         allow_gifs: boolean;
         allow_comment_media: boolean;
+        seo_index: boolean;
+        seo_index_posts: boolean;
         join_questions: string[];
         level_names: (string | null)[];
     };
     categories: (Category & { posts_count: number; position: number })[];
     media: MediaItem[];
     giphyReady: boolean;
+    siteIndexed: boolean;
     photoLimits: { max_images: number; max_kb: number };
     team: TeamMember[];
     canManageAdmins: boolean;
 }
 
-export default function Settings({ community, settings, categories, media, giphyReady, photoLimits, team, canManageAdmins }: SettingsProps) {
+export default function Settings({
+    community,
+    settings,
+    categories,
+    media,
+    giphyReady,
+    siteIndexed,
+    photoLimits,
+    team,
+    canManageAdmins,
+}: SettingsProps) {
     const form = useForm({
         name: settings.name,
         tagline: settings.tagline ?? '',
@@ -46,6 +59,8 @@ export default function Settings({ community, settings, categories, media, giphy
         allow_images: settings.allow_images,
         allow_gifs: settings.allow_gifs,
         allow_comment_media: settings.allow_comment_media,
+        seo_index: settings.seo_index,
+        seo_index_posts: settings.seo_index_posts,
         join_questions: settings.join_questions,
         level_names: settings.level_names.map((n) => n ?? ''),
         icon: null as File | null,
@@ -130,6 +145,36 @@ export default function Settings({ community, settings, categories, media, giphy
                                 {formatFileSize(photoLimits.max_kb)}. Owners, admins and moderators can always add photos
                                 {giphyReady && ' and GIFs'}. A platform admin sets the limits in Admin settings.
                             </p>
+                        </div>
+                    </Field>
+
+                    <Field label="Search engines (SEO)">
+                        <div className="space-y-3">
+                            {!siteIndexed ? (
+                                <p className="text-muted-foreground text-sm">
+                                    Search engines are turned off for the whole site in Admin settings, so nothing here is indexed.
+                                </p>
+                            ) : form.data.privacy === 'private' ? (
+                                <p className="text-muted-foreground text-sm">
+                                    Private communities are never shown in Google or other search engines.
+                                </p>
+                            ) : (
+                                <>
+                                    <label className="flex items-center gap-2 text-sm">
+                                        <Checkbox checked={form.data.seo_index} onCheckedChange={(v) => form.setData('seo_index', v === true)} />
+                                        Let Google and other search engines show this community (About page, feed, classroom list)
+                                    </label>
+                                    {form.data.seo_index && (
+                                        <label className="ml-6 flex items-center gap-2 text-sm">
+                                            <Checkbox
+                                                checked={form.data.seo_index_posts}
+                                                onCheckedChange={(v) => form.setData('seo_index_posts', v === true)}
+                                            />
+                                            Also show individual posts in search results
+                                        </label>
+                                    )}
+                                </>
+                            )}
                         </div>
                     </Field>
 

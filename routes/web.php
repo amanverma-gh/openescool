@@ -23,11 +23,16 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\PricingController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\SeoController;
+use App\Http\Controllers\UpdateController;
 use App\Http\Controllers\UserProfileController;
 use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [CommunityController::class, 'index'])->name('home');
+Route::get('/', [CommunityController::class, 'home'])->name('home');
+Route::get('discover', [CommunityController::class, 'index'])->name('discover');
+Route::get('robots.txt', [SeoController::class, 'robots'])->name('robots');
+Route::get('sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
 
 Route::middleware('guest')->group(function () {
     Route::get('auth/google', [GoogleAuthController::class, 'redirect'])->name('auth.google');
@@ -66,7 +71,11 @@ Route::middleware('auth')->group(function () {
 
     Route::get('admin/settings', [AppSettingsController::class, 'edit'])->name('admin.settings');
     Route::post('admin/settings', [AppSettingsController::class, 'update'])->name('admin.settings.update');
+    Route::post('admin/settings/site', [AppSettingsController::class, 'updateSite'])->name('admin.settings.site');
     Route::post('admin/settings/test-email', [AppSettingsController::class, 'testEmail'])->middleware('throttle:5,1')->name('admin.settings.test-email');
+    Route::post('admin/update/check', [UpdateController::class, 'check'])->middleware('throttle:10,1')->name('admin.update.check');
+    Route::post('admin/update/run', [UpdateController::class, 'run'])->middleware('throttle:3,1')->name('admin.update.run');
+    Route::get('admin/update/status', [UpdateController::class, 'status'])->name('admin.update.status');
 
     Route::prefix('admin/moderation')->name('moderation.')->controller(ModerationController::class)->group(function () {
         Route::get('/', 'index')->name('index');

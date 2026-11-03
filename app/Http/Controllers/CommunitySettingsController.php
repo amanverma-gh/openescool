@@ -6,6 +6,7 @@ use App\Models\AppSetting;
 use App\Models\Category;
 use App\Models\Community;
 use App\Models\CommunityMember;
+use App\Support\Seo;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -22,13 +23,14 @@ class CommunitySettingsController extends Controller
 
         return Inertia::render('communities/settings', [
             'community' => $this->communityProps($community),
-            'settings' => $community->only(['name', 'tagline', 'about', 'privacy', 'requires_approval', 'allow_images', 'allow_gifs', 'allow_comment_media']) + [
+            'settings' => $community->only(['name', 'tagline', 'about', 'privacy', 'requires_approval', 'allow_images', 'allow_gifs', 'allow_comment_media', 'seo_index', 'seo_index_posts']) + [
                 'join_questions' => $community->join_questions ?? [],
                 'level_names' => $community->levelNames(),
             ],
             'categories' => $community->categories()->withCount('posts')->get(),
             'media' => $community->media()->get()->map->toPublicArray(),
             'giphyReady' => filled(AppSetting::get('giphy_api_key')),
+            'siteIndexed' => Seo::siteIndexed(),
             'team' => $community->activeMembers()
                 ->with('user')
                 ->whereIn('role', CommunityMember::STAFF_ROLES)
@@ -54,6 +56,8 @@ class CommunitySettingsController extends Controller
             'allow_images' => ['boolean'],
             'allow_gifs' => ['boolean'],
             'allow_comment_media' => ['boolean'],
+            'seo_index' => ['boolean'],
+            'seo_index_posts' => ['boolean'],
             'join_questions' => ['array', 'max:3'],
             'join_questions.*' => ['string', 'max:200'],
             'level_names' => ['array', 'size:'.count(CommunityMember::LEVEL_THRESHOLDS)],

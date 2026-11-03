@@ -1,8 +1,8 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/react-starter-kit",
+    "name": "openescool/openescool",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "description": "OpenEscool: an open-source community platform with courses, events and paid memberships.",
     "keywords": [
         "laravel",
         "framework"

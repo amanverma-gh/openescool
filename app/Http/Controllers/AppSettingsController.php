@@ -3,11 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\AppSetting;
+use App\Models\Community;
 use App\Models\Post;
+use App\Services\AppUpdater;
+use App\Services\UpdateChecker;
+use App\Support\Seo;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -17,7 +22,7 @@ use Inertia\Response;
  */
 class AppSettingsController extends Controller
 {
-    public function edit(Request $request): Response
+    public function edit(Request $request, UpdateChecker $checker, AppUpdater $updater): Response
     {
         $this->ensureAdmin($request);
 
@@ -38,7 +43,69 @@ class AppSettingsController extends Controller
                 ->mapWithKeys(fn ($limits, $key) => [str_replace('_kb', '_mb', $key) => $limits[1] / 1024])->all(),
             // What this server's PHP accepts; uploads above it fail before Laravel sees them.
             'serverMaxMb' => round(min($this->iniBytes('upload_max_filesize'), $this->iniBytes('post_max_size')) / 1024 / 1024, 1),
+            'site' => [
+                'name' => config('app.name'),
+                'logo' => AppSetting::logoUrl(),
+                'seo_index' => Seo::siteIndexed(),
+            ],
+            'home' => CommunityController::homeSettings(),
+            'communities' => Community::orderBy('name')->get(['id', 'name', 'privacy']),
+            'helpUrl' => config('openescool.help_url'),
+            'update' => $checker->status() + [
+                'blocker' => $updater->blocker(),
+                'run' => $updater->status(),
+            ],
         ]);
+    }
+
+    /**
+     * Site name and logo, the front page, and search engines.
+     */
+    public function updateSite(Request $request): RedirectResponse
+    {
+        $this->ensureAdmin($request);
+
+        $data = $request->validate([
+            'site_name' => ['sometimes', 'required', 'string', 'max:40'],
+            'site_logo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:1024'],
+            'remove_logo' => ['boolean'],
+            'home_mode' => ['sometimes', 'in:discover,community'],
+            'home_community_id' => ['nullable', 'required_if:home_mode,community', 'integer', 'exists:communities,id'],
+            'home_headline' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'home_subtext' => ['sometimes', 'nullable', 'string', 'max:300'],
+            'home_button' => ['sometimes', 'nullable', 'string', 'max:40'],
+            'home_show_communities' => ['sometimes', 'boolean'],
+            'home_communities_title' => ['sometimes', 'nullable', 'string', 'max:60'],
+            'home_community_ids' => ['sometimes', 'array', 'max:30'],
+            'home_community_ids.*' => ['integer', 'exists:communities,id'],
+            'seo_index' => ['sometimes', 'boolean'],
+        ], [
+            'home_community_id.required_if' => 'Choose which community the home page opens.',
+        ]);
+
+        if ($request->hasFile('site_logo') || ($data['remove_logo'] ?? false)) {
+            if ($old = AppSetting::get('site_logo')) {
+                Storage::disk('public')->delete($old);
+            }
+            AppSetting::put('site_logo', $request->hasFile('site_logo') ? $request->file('site_logo')->store('site', 'public') : null);
+        }
+
+        foreach (['site_name', 'home_mode', 'home_community_id', 'home_headline', 'home_subtext', 'home_button', 'home_communities_title'] as $key) {
+            if (array_key_exists($key, $data)) {
+                // Empty text falls back to the default wording.
+                AppSetting::put($key, $data[$key] === null ? null : trim((string) $data[$key]));
+            }
+        }
+        foreach (['home_show_communities', 'seo_index'] as $key) {
+            if (array_key_exists($key, $data)) {
+                AppSetting::put($key, $data[$key] ? '1' : '0');
+            }
+        }
+        if (array_key_exists('home_community_ids', $data)) {
+            AppSetting::put('home_community_ids', $data['home_community_ids'] ? json_encode(array_values(array_map('intval', $data['home_community_ids']))) : null);
+        }
+
+        return back()->with('success', 'Settings saved.');
     }
 
     public function update(Request $request): RedirectResponse

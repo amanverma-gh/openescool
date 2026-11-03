@@ -10,10 +10,16 @@ declare global {
     const route: typeof routeFn;
 }
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+// The site name can be changed in Admin settings, so read it from the page props.
+let appName: string = import.meta.env.VITE_APP_NAME || 'OpenEscool';
+try {
+    appName = JSON.parse(document.getElementById('app')?.dataset.page ?? '{}').props?.name || appName;
+} catch {
+    // keep the build-time name
+}
 
 createInertiaApp({
-    title: (title) => `${title} - ${appName}`,
+    title: (title) => (title ? `${title} - ${appName}` : appName),
     resolve: (name) => resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob('./pages/**/*.tsx')),
     setup({ el, App, props }) {
         const root = createRoot(el);

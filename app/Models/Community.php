@@ -35,6 +35,8 @@ class Community extends Model
         'allow_images',
         'allow_gifs',
         'allow_comment_media',
+        'seo_index',
+        'seo_index_posts',
     ];
 
     protected $hidden = ['icon_path', 'cover_path'];
@@ -50,6 +52,8 @@ class Community extends Model
             'allow_images' => 'boolean',
             'allow_gifs' => 'boolean',
             'allow_comment_media' => 'boolean',
+            'seo_index' => 'boolean',
+            'seo_index_posts' => 'boolean',
         ];
     }
 

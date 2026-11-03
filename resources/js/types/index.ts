@@ -27,6 +27,7 @@ export interface NavItem {
 
 export interface SharedData {
     name: string;
+    logo: string | null;
     auth: Auth;
     features: { google: boolean };
     flash: { success: string | null; error: string | null };

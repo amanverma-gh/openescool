@@ -1,3 +1,13 @@
+import {
+    BrandingSection,
+    HelpSection,
+    HomePageSection,
+    SeoSection,
+    UpdatesSection,
+    type HomeSettings,
+    type SiteSettings,
+    type UpdateState,
+} from '@/components/admin/site-sections';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +27,11 @@ interface AdminSettingsProps {
     uploads: UploadLimits;
     uploadCeilings: Omit<UploadLimits, 'max_images'>;
     serverMaxMb: number;
+    site: SiteSettings;
+    home: HomeSettings;
+    communities: { id: number; name: string; privacy: string }[];
+    helpUrl: string;
+    update: UpdateState;
 }
 
 interface UploadLimits {
@@ -26,7 +41,18 @@ interface UploadLimits {
     max_video_mb: number;
 }
 
-export default function AdminSettings({ giphy, brevo, uploads, uploadCeilings, serverMaxMb }: AdminSettingsProps) {
+export default function AdminSettings({
+    giphy,
+    brevo,
+    uploads,
+    uploadCeilings,
+    serverMaxMb,
+    site,
+    home,
+    communities,
+    helpUrl,
+    update,
+}: AdminSettingsProps) {
     return (
         <AppLayout>
             <Head title="Admin settings" />
@@ -41,9 +67,14 @@ export default function AdminSettings({ giphy, brevo, uploads, uploadCeilings, s
                     </p>
                 </div>
 
+                <HelpSection url={helpUrl} />
+                <BrandingSection site={site} />
+                <HomePageSection home={home} communities={communities} />
+                <SeoSection site={site} />
                 <BrevoSection brevo={brevo} />
                 <UploadsSection uploads={uploads} ceilings={uploadCeilings} serverMaxMb={serverMaxMb} />
                 <GiphySection giphy={giphy} />
+                <UpdatesSection update={update} />
             </div>
         </AppLayout>
     );

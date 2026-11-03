@@ -138,6 +138,16 @@ class User extends Authenticatable
         return $this->hasMany(CommunityMember::class);
     }
 
+    /**
+     * On a fresh install the first person to sign up runs the site.
+     */
+    public function makeAdminIfFirst(): void
+    {
+        if (! static::where('is_admin', true)->whereKeyNot($this->id)->exists()) {
+            $this->forceFill(['is_admin' => true])->save();
+        }
+    }
+
     public function isRestricted(): bool
     {
         return $this->restricted_at !== null;

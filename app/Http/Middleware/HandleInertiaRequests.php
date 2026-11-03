@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\AppSetting;
 use App\Models\Conversation;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -42,6 +43,7 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'name' => config('app.name'),
+            'logo' => fn () => AppSetting::logoUrl(),
             'auth' => [
                 'user' => $user ? $user->only(['id', 'name', 'username', 'email', 'avatar', 'bio', 'is_admin', 'email_verified_at']) + [
                     'restricted' => $user->isRestricted(),
