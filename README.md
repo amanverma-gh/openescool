@@ -4,7 +4,7 @@
 
 OpenEscool gives you everything you need to run paid or free online communities: a discussion feed, courses, events, leaderboards, chat and memberships, under your own name, logo and domain. It's an open-source alternative to Skool that you install once and own forever.
 
-- 🌐 **Website:** see [`website/index.html`](website/index.html)
+- 🌐 **Website:** see [openescool.amanverma.store](https://openescool.amanverma.store/)
 - 🚀 **Install on Hostinger VPS:** [step-by-step guide](docs/INSTALL-HOSTINGER.md)
 - 📖 **How everything works:** [guide](docs/GUIDE.md)
 - 💬 **Help and ideas:** [openescool.userjot.com](https://openescool.userjot.com/)
