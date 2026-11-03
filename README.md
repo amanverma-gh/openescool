@@ -114,7 +114,7 @@ On a marketplace platform, your members browse and join other creators' groups f
 
 Follow the **[Hostinger install guide](docs/INSTALL-HOSTINGER.md)**. It covers the whole setup in about 30 minutes: server, database, domain, free SSL and background jobs.
 
-Need a server? **[Get a Hostinger VPS](https://www.hostg.xyz/aff_c?offer_id=6&aff_id=67383&url_id=3039)**. *(Affiliate link: it supports OpenEscool at no extra cost to you.)*
+Need a server? **[Get a Hostinger VPS](https://www.hostg.xyz/aff_c?offer_id=6&aff_id=67383&url_id=3039)**.
 
 **The first person to sign up on a new install becomes the admin.**
 
@@ -154,6 +154,10 @@ Laravel 12, Inertia, React, TypeScript and Tailwind CSS. MySQL in production (SQ
 ## Contributing and help
 
 Found a bug or have an idea? Post it at [openescool.userjot.com](https://openescool.userjot.com/). Pull requests are welcome.
+
+## Disclosure
+
+See the [disclosure page](https://openescool.amanverma.store/disclosure).
 
 ## License
 

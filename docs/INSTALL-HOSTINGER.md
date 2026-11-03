@@ -4,7 +4,7 @@ This guide takes you from an empty VPS to a live site with HTTPS, about 30–45 
 
 **What you need**
 
-- A Hostinger VPS: **[get one here](https://www.hostg.xyz/aff_c?offer_id=6&aff_id=67383&url_id=3039)**. *(Affiliate link: it supports OpenEscool at no extra cost to you.)* **KVM 1** is enough to start; pick **KVM 2** if you expect thousands of members or many video lessons.
+- A Hostinger VPS: **[get one here](https://www.hostg.xyz/aff_c?offer_id=6&aff_id=67383&url_id=3039)**. **KVM 1** is enough to start; pick **KVM 2** if you expect thousands of members or many video lessons.
 - A domain, for example `koko.com` (from Hostinger or anywhere else).
 - About 30 minutes.
 
