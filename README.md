@@ -157,4 +157,6 @@ Found a bug or have an idea? Post it at [openescool.userjot.com](https://openesc
 
 ## License
 
-MIT
+OpenEscool is licensed under the [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0).
+
+In short: you can use it for free, run it for your own communities, change it and share it. If you run a modified version as a service for other people, you must make your modified source code available to them under the same licence.
