@@ -9,6 +9,24 @@ OpenEscool gives you everything you need to run paid or free online communities:
 - 📖 **How everything works:** [guide](docs/GUIDE.md)
 - 💬 **Help and ideas:** [openescool.userjot.com](https://openescool.userjot.com/)
 
+![OpenEscool community feed](website/screenshots/feed.png)
+
+---
+
+## Screenshots
+
+Real screens from a fresh install with demo data.
+
+| Classroom | Lesson |
+| --- | --- |
+| ![Classroom with courses](website/screenshots/classroom.png) | ![Lesson with outline and progress](website/screenshots/course.png) |
+| **Calendar** | **Leaderboards** |
+| ![Calendar with upcoming events](website/screenshots/calendar.png) | ![Levels and 7-day, 30-day and all-time leaderboards](website/screenshots/leaderboards.png) |
+| **Admin settings** | **Dark mode** |
+| ![Admin settings](website/screenshots/admin-settings.png) | ![Community feed in dark mode](website/screenshots/feed-dark.png) |
+
+<p align="center"><img src="website/screenshots/mobile-feed.png" alt="Community feed on a phone" width="300"></p>
+
 ---
 
 ## Why OpenEscool

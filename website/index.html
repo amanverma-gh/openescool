@@ -9,13 +9,17 @@
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://openescool.amanverma.store/">
     <meta property="og:url" content="https://openescool.amanverma.store/">
-    <meta name="twitter:card" content="summary">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://openescool.amanverma.store/screenshots/feed.png">
     <meta name="twitter:title" content="OpenEscool | Open Source Skool.com Alternative">
     <meta name="twitter:description" content="Self-host unlimited communities with courses, events and paid memberships. Free and open source.">
     <meta property="og:title" content="OpenEscool | Open Source Skool.com Alternative">
     <meta property="og:description" content="A free, open-source Skool.com alternative. Unlimited communities on your own server, with courses, events, payments and chat.">
     <meta property="og:site_name" content="OpenEscool">
     <meta property="og:type" content="website">
+    <meta property="og:image" content="https://openescool.amanverma.store/screenshots/feed.png">
+    <meta property="og:image:width" content="2200">
+    <meta property="og:image:height" content="1560">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -130,25 +134,24 @@
         .hero-points li::before { content: "✓"; color: var(--good); font-weight: 700; margin-right: 6px; }
         @media (max-width: 960px) { .hero-grid { grid-template-columns: 1fr; } }
 
-        /* Product mockup */
-        .mock { background: var(--card); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); overflow: hidden; }
-        .mock-bar { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--line); font-weight: 600; font-size: 14px; }
-        .mock-bar .dot { width: 26px; height: 26px; border-radius: 8px; background: linear-gradient(135deg, #a78bfa, var(--brand)); color: #fff; display: grid; place-items: center; font-size: 13px; }
-        .mock-tabs { display: flex; gap: 16px; padding: 0 16px; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--muted); overflow: hidden; }
-        .mock-tabs span { padding: 10px 0; }
-        .mock-tabs .on { color: var(--text); border-bottom: 2px solid var(--text); font-weight: 600; }
-        .mock-body { padding: 16px; display: grid; gap: 12px; background: var(--bg-alt); }
-        .post { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
-        .post-head { display: flex; align-items: center; gap: 10px; font-size: 13px; }
-        .avatar { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 600; font-size: 13px; position: relative; flex-shrink: 0; }
-        .avatar i { position: absolute; right: -3px; bottom: -3px; background: var(--brand); color: #fff; font-style: normal; font-size: 9px; width: 15px; height: 15px; border-radius: 50%; display: grid; place-items: center; border: 2px solid var(--card); }
-        .post h4 { margin: 10px 0 4px; font-size: 15px; }
-        .post p { margin: 0; font-size: 13px; color: var(--muted); }
-        .post-foot { display: flex; gap: 16px; margin-top: 10px; font-size: 12px; color: var(--muted); }
-        .tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--brand-soft); color: var(--brand-ink); margin-left: auto; }
-        .lesson { display: flex; align-items: center; gap: 12px; }
-        .lesson .bar { flex: 1; height: 6px; background: var(--line); border-radius: 999px; overflow: hidden; }
-        .lesson .bar b { display: block; height: 100%; width: 68%; background: var(--good); border-radius: 999px; }
+        /* Real app screenshots */
+        .frame { background: var(--card); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); overflow: hidden; }
+        .frame-bar { display: flex; gap: 6px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+        .frame-bar i { width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
+        .frame img { display: block; width: 100%; height: auto; }
+        .frame .shot-dark { display: none; }
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) .frame .shot-light { display: none; }
+            :root:not([data-theme="light"]) .frame .shot-dark { display: block; }
+        }
+        :root[data-theme="dark"] .frame .shot-light { display: none; }
+        :root[data-theme="dark"] .frame .shot-dark { display: block; }
+        .tour-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+        .tour-tabs button { font: inherit; font-size: 14px; font-weight: 600; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--text); cursor: pointer; }
+        .tour-tabs button[aria-selected="true"] { background: var(--text); color: var(--bg); border-color: var(--text); }
+        .tour-panel[hidden] { display: none; }
+        .tour-panel p { margin: 14px 2px 0; color: var(--muted); font-size: 15px; }
+        .tour-panel .frame.phone { max-width: 340px; margin: 0 auto; border-radius: 28px; }
 
         /* Stats strip */
         .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 64px; }
@@ -250,6 +253,7 @@
         <a class="logo" href="#"><span class="logo-mark">O</span> OpenEscool</a>
         <div class="nav-links">
             <a href="#why">Why</a>
+            <a href="#tour">Screenshots</a>
             <a href="#features">Features</a>
             <a href="#compare">Compare</a>
             <a href="#install">Install</a>
@@ -281,37 +285,10 @@
             </ul>
         </div>
 
-        <div class="mock" aria-hidden="true">
-            <div class="mock-bar"><span class="dot">C</span> Creator Academy <span class="tag">You own this</span></div>
-            <div class="mock-tabs"><span class="on">Community</span><span>Classroom</span><span>Calendar</span><span>Members</span><span>Leaderboards</span></div>
-            <div class="mock-body">
-                <div class="post">
-                    <div class="post-head">
-                        <span class="avatar" style="background:#6366f1">AV<i>7</i></span>
-                        <div><b>Aman</b> <span class="muted">· 2h · Announcements</span></div>
-                        <span class="tag">📌 Pinned</span>
-                    </div>
-                    <h4>Live Q&amp;A this Friday 🎉</h4>
-                    <p>Bring your questions about growing your first 100 members. Replay goes in the Classroom.</p>
-                    <div class="post-foot"><span>👍 48</span><span>💬 23 comments</span><span>✉️ Emailed to members</span></div>
-                </div>
-                <div class="post">
-                    <div class="post-head">
-                        <span class="avatar" style="background:#10b981">PS<i>4</i></span>
-                        <div><b>Priya</b> <span class="muted">· 5h · Wins</span></div>
-                    </div>
-                    <h4>Just made my first sale! 🚀</h4>
-                    <p>Thanks to Module 3, my offer page finally clicked.</p>
-                    <div class="post-foot"><span>👍 31</span><span>💬 12 comments</span></div>
-                </div>
-                <div class="post lesson">
-                    <span>🎓</span>
-                    <div style="flex:1">
-                        <div style="font-size:13px;font-weight:600;margin-bottom:6px">Growth Masterclass · 68% complete</div>
-                        <div class="bar"><b></b></div>
-                    </div>
-                </div>
-            </div>
+        <div class="frame">
+            <div class="frame-bar"><i></i><i></i><i></i></div>
+            <img class="shot-light" src="/screenshots/feed.png" width="2200" height="1560" alt="OpenEscool community feed with posts, categories and a leaderboard">
+            <img class="shot-dark" src="/screenshots/feed-dark.png" width="2200" height="1560" alt="OpenEscool community feed in dark mode" loading="lazy">
         </div>
     </div>
 
@@ -376,6 +353,48 @@
                 <div class="row"><span><strong>You save every year</strong></span><span class="big save" id="saved">$3,444</span></div>
                 <p class="note">Payment gateway fees (Stripe, Razorpay) apply either way. OpenEscool adds no fee of its own.</p>
             </div>
+        </div>
+    </div>
+</section>
+
+<section id="tour">
+    <div class="wrap">
+        <div class="section-head">
+            <div class="eyebrow">Take a look</div>
+            <h2>The real app, not a mockup</h2>
+            <p class="muted">Screenshots from a fresh OpenEscool install with demo data.</p>
+        </div>
+        <div class="tour-tabs" role="tablist">
+            <button type="button" role="tab" id="tab-classroom" aria-controls="panel-classroom" aria-selected="true">Classroom</button>
+            <button type="button" role="tab" id="tab-lesson" aria-controls="panel-lesson" aria-selected="false">Lessons</button>
+            <button type="button" role="tab" id="tab-calendar" aria-controls="panel-calendar" aria-selected="false">Calendar</button>
+            <button type="button" role="tab" id="tab-leaderboards" aria-controls="panel-leaderboards" aria-selected="false">Leaderboards</button>
+            <button type="button" role="tab" id="tab-admin" aria-controls="panel-admin" aria-selected="false">Admin settings</button>
+            <button type="button" role="tab" id="tab-mobile" aria-controls="panel-mobile" aria-selected="false">Mobile</button>
+        </div>
+        <div class="tour-panel" role="tabpanel" id="panel-classroom" aria-labelledby="tab-classroom">
+            <div class="frame"><div class="frame-bar"><i></i><i></i><i></i></div><img src="/screenshots/classroom.png" width="2880" height="1800" alt="OpenEscool classroom screen" loading="lazy"></div>
+            <p>Courses with modules, lessons and progress. Lock any course until a member reaches a chosen level.</p>
+        </div>
+        <div class="tour-panel" role="tabpanel" id="panel-lesson" aria-labelledby="tab-lesson" hidden>
+            <div class="frame"><div class="frame-bar"><i></i><i></i><i></i></div><img src="/screenshots/course.png" width="2880" height="1800" alt="OpenEscool lessons screen" loading="lazy"></div>
+            <p>Each lesson can have a video, text, files and links. Members mark lessons complete as they go.</p>
+        </div>
+        <div class="tour-panel" role="tabpanel" id="panel-calendar" aria-labelledby="tab-calendar" hidden>
+            <div class="frame"><div class="frame-bar"><i></i><i></i><i></i></div><img src="/screenshots/calendar.png" width="2880" height="1800" alt="OpenEscool calendar screen" loading="lazy"></div>
+            <p>One-off and weekly events, shown in each member's time zone, with email reminders.</p>
+        </div>
+        <div class="tour-panel" role="tabpanel" id="panel-leaderboards" aria-labelledby="tab-leaderboards" hidden>
+            <div class="frame"><div class="frame-bar"><i></i><i></i><i></i></div><img src="/screenshots/leaderboards.png" width="2880" height="1800" alt="OpenEscool leaderboards screen" loading="lazy"></div>
+            <p>Members earn points when others like their posts and comments, level up, and unlock courses.</p>
+        </div>
+        <div class="tour-panel" role="tabpanel" id="panel-admin" aria-labelledby="tab-admin" hidden>
+            <div class="frame"><div class="frame-bar"><i></i><i></i><i></i></div><img src="/screenshots/admin-settings.png" width="2880" height="1800" alt="OpenEscool admin settings screen" loading="lazy"></div>
+            <p>Site name, logo, home page, email, SEO and upload limits, all from the browser.</p>
+        </div>
+        <div class="tour-panel" role="tabpanel" id="panel-mobile" aria-labelledby="tab-mobile" hidden>
+            <div class="frame phone"><img src="/screenshots/mobile-feed.png" width="780" height="1688" alt="OpenEscool mobile screen" loading="lazy"></div>
+            <p>Works on phones out of the box, no app to install.</p>
         </div>
     </div>
 </section>
@@ -608,6 +627,16 @@
     groups.addEventListener('input', update);
     vps.addEventListener('input', update);
     update();
+
+    // Screenshot tour tabs
+    const tourTabs = document.querySelectorAll('.tour-tabs [role="tab"]');
+    tourTabs.forEach((tab) => tab.addEventListener('click', () => {
+        tourTabs.forEach((t) => {
+            const on = t === tab;
+            t.setAttribute('aria-selected', String(on));
+            document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+        });
+    }));
 
     // Light / dark toggle (remembered on this device)
     const root = document.documentElement;
